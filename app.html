@@ -4,7 +4,381 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Minddrop</title>
-  <link rel="stylesheet" href="./styles.css" />
+
+  <style>
+    :root{
+      --bg:#f3ecdf;
+      --text:#3c302b;
+      --muted:#8d8176;
+      --accent:#b77e25;
+      --field:#fffaf3;
+      --field-text:#3c302b;
+      --field-placeholder:#8d8176;
+      --field-border:#e2d4c3;
+      --error:#a85b4b;
+      --panel:#fffaf2;
+      --panel2:#f6eee2;
+      --shadow:0 18px 45px rgba(84,62,43,.10);
+    }
+
+    html[data-theme="dark"]{
+      --bg:#141516;
+      --text:#f0e7d9;
+      --muted:#918b83;
+      --accent:#d9aa3d;
+      --field:#fffaf3;
+      --field-text:#3c302b;
+      --field-placeholder:#8d8176;
+      --field-border:#e2d4c3;
+      --error:#cf7463;
+      --panel:#1c1d1f;
+      --panel2:#232528;
+      --shadow:0 18px 45px rgba(0,0,0,.28);
+    }
+
+    *{box-sizing:border-box}
+
+    html,body{
+      margin:0;
+      min-height:100%;
+    }
+
+    body{
+      min-height:100vh;
+      background:
+        radial-gradient(circle at 50% 25%,rgba(217,170,61,.08),transparent 28%),
+        var(--bg);
+      color:var(--text);
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+      transition:background .25s ease,color .25s ease;
+    }
+
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    .hidden{display:none!important}
+
+    .page{
+      min-height:100vh;
+      padding:18px 7vw 48px;
+    }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      color:var(--text);
+      text-decoration:none;
+      font:27px Georgia,"Times New Roman",serif;
+    }
+
+    .brand svg{
+      width:27px;
+      height:35px;
+      color:var(--accent);
+    }
+
+    .top-actions{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .sync-state{
+      color:var(--muted);
+      font:10px "Courier New",monospace;
+    }
+
+    .icon-button{
+      width:38px;
+      height:38px;
+      border:1px solid var(--field-border);
+      border-radius:12px;
+      background:transparent;
+      color:var(--muted);
+    }
+
+    .icon-button:hover{
+      color:var(--accent);
+      border-color:var(--accent);
+    }
+
+    .app-main{
+      width:min(900px,100%);
+      margin:75px auto 0;
+      text-align:center;
+    }
+
+    .app-main h1{
+      margin:0;
+      font:500 clamp(42px,7vw,70px)/1 Georgia,"Times New Roman",serif;
+      letter-spacing:-.05em;
+    }
+
+    .dashboard-copy{
+      margin:12px 0 28px;
+      color:var(--accent);
+      font:12px "Courier New",monospace;
+    }
+
+    .capture{
+      margin-bottom:16px;
+      padding:6px;
+      border:1px solid var(--field-border);
+      border-radius:18px;
+      background:var(--panel);
+      box-shadow:var(--shadow);
+    }
+
+    .capture input{
+      width:100%;
+      min-height:58px;
+      padding:0 18px;
+      border:0;
+      outline:0;
+      border-radius:15px;
+      background:transparent;
+      color:var(--text);
+      font-size:16px;
+    }
+
+    .capture input::placeholder{
+      color:var(--muted);
+    }
+
+    .routine-panel{
+      padding:22px;
+      border:1px solid var(--field-border);
+      border-radius:20px;
+      background:var(--panel);
+      box-shadow:var(--shadow);
+      text-align:left;
+    }
+
+    .panel-heading{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+    }
+
+    .routine-panel h2{
+      margin:0 0 14px;
+      font:500 26px Georgia,"Times New Roman",serif;
+    }
+
+    .routine-tabs{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+
+    .routine-tab{
+      padding:8px 13px;
+      border:1px solid var(--field-border);
+      border-radius:999px;
+      background:var(--panel2);
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    .routine-tab.active{
+      border-color:var(--accent);
+      background:var(--accent);
+      color:#171717;
+      font-weight:800;
+    }
+
+    .add-routine-button{
+      padding:10px 13px;
+      border:1px dashed var(--field-border);
+      border-radius:12px;
+      background:transparent;
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    .add-routine-button:hover{
+      color:var(--accent);
+      border-color:var(--accent);
+    }
+
+    .routine-item,
+    .task-item{
+      display:grid;
+      grid-template-columns:80px 1fr auto;
+      gap:10px;
+      align-items:center;
+      margin-bottom:9px;
+      padding:12px;
+      border:1px solid var(--field-border);
+      border-radius:12px;
+      background:var(--panel2);
+    }
+
+    .task-item{
+      grid-template-columns:18px 1fr auto;
+    }
+
+    .time{
+      color:var(--accent);
+      font-size:12px;
+      font-weight:800;
+    }
+
+    .task-title{
+      font-size:13px;
+      font-weight:700;
+    }
+
+    .task-meta,
+    .routine-frequency{
+      margin-top:3px;
+      color:var(--muted);
+      font-size:10px;
+    }
+
+    .check{
+      width:18px;
+      height:18px;
+      border:1px solid var(--muted);
+      border-radius:6px;
+      background:transparent;
+    }
+
+    .check.done{
+      border-color:var(--accent);
+      background:var(--accent);
+    }
+
+    .delete{
+      border:0;
+      background:transparent;
+      color:var(--muted);
+      font-size:17px;
+    }
+
+    .delete:hover{
+      color:var(--error);
+    }
+
+    .captured{
+      margin-top:16px;
+      padding-top:14px;
+      border-top:1px solid var(--field-border);
+    }
+
+    .captured h3{
+      margin:0 0 11px;
+      font:500 19px Georgia,"Times New Roman",serif;
+    }
+
+    .empty{
+      padding:8px 0;
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    dialog{
+      width:min(500px,calc(100% - 28px));
+      padding:0;
+      border:1px solid var(--field-border);
+      border-radius:20px;
+      background:var(--panel);
+      color:var(--text);
+      box-shadow:var(--shadow);
+    }
+
+    dialog::backdrop{
+      background:rgba(0,0,0,.48);
+    }
+
+    .dialog-card{
+      padding:22px;
+    }
+
+    .dialog-card h2{
+      margin:0 0 16px;
+      font:500 25px Georgia,"Times New Roman",serif;
+    }
+
+    .dialog-grid{
+      display:grid;
+      gap:12px;
+    }
+
+    .dialog-grid label{
+      display:block;
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    .dialog-grid input,
+    .dialog-grid select{
+      width:100%;
+      margin-top:6px;
+      padding:11px;
+      border:1px solid var(--field-border);
+      border-radius:12px;
+      outline:0;
+      background:var(--field);
+      color:var(--field-text);
+    }
+
+    .dialog-grid input:focus,
+    .dialog-grid select:focus{
+      border-color:var(--accent);
+      box-shadow:0 0 0 3px rgba(183,126,37,.10);
+    }
+
+    .dialog-actions{
+      display:flex;
+      gap:9px;
+      margin-top:16px;
+    }
+
+    .dialog-actions button{
+      flex:1;
+      padding:11px 13px;
+      border-radius:11px;
+    }
+
+    .save-routine{
+      border:1px solid var(--accent);
+      background:var(--accent);
+      color:#171717;
+      font-weight:800;
+    }
+
+    .cancel-routine{
+      border:1px solid var(--field-border);
+      background:transparent;
+      color:var(--muted);
+    }
+
+    .error{
+      min-height:18px;
+      margin-top:9px;
+      color:var(--error);
+      font-size:11px;
+    }
+
+    @media(max-width:600px){
+      .page{padding:16px 14px 30px}
+      .brand{font-size:24px}
+      .sync-state{display:none}
+      .app-main{margin-top:55px}
+      .routine-panel{padding:17px}
+      .panel-heading{align-items:flex-start}
+    }
+  </style>
+
 </head>
 <body>
 <div class="page">
@@ -16,6 +390,7 @@
       </svg>
       <span>minddrop</span>
     </a>
+
     <div class="top-actions">
       <span id="syncState" class="sync-state">connecting…</span>
       <button id="signOutButton" class="icon-button" title="Sign out">↪</button>
@@ -32,55 +407,100 @@
       <input id="taskInput" placeholder="Add a task or reminder…" autocomplete="off" />
     </div>
 
-    <div class="routine-panel">
+    <section class="routine-panel">
       <div class="panel-heading">
         <h2 id="routineHeading">daily routine</h2>
         <button id="addRoutineButton" class="add-routine-button">+ add routine</button>
       </div>
 
-      <div class="routine-tabs">
-        <button class="routine-tab active" data-frequency="daily">daily</button>
-        <button class="routine-tab" data-frequency="weekly">weekly</button>
-        <button class="routine-tab" data-frequency="monthly">monthly</button>
+      <div class="routine-tabs" role="tablist" aria-label="Routine frequency">
+        <button class="routine-tab active" data-frequency="daily" role="tab">daily</button>
+        <button class="routine-tab" data-frequency="weekly" role="tab">weekly</button>
+        <button class="routine-tab" data-frequency="monthly" role="tab">monthly</button>
       </div>
 
-      <div id="routineList"></div>
+      <div id="routineList">
+        <div class="empty">No daily routines yet. Add one when you’re ready.</div>
+      </div>
 
       <div class="captured">
         <h3>captured tasks</h3>
-        <div id="taskList"></div>
+        <div id="taskList">
+          <div class="empty">Nothing captured yet.</div>
+        </div>
       </div>
-    </div>
+    </section>
   </main>
 </div>
 
 <dialog id="routineDialog">
   <form id="routineForm" class="dialog-card">
     <h2>add a routine</h2>
+
     <div class="dialog-grid">
-      <label>Routine<input id="routineTitleInput" placeholder="e.g. Review priorities" required /></label>
-      <label>Time<input id="routineTimeInput" type="time" value="09:00" required /></label>
-      <label>Repeats
+      <label>
+        Routine
+        <input
+          id="routineTitleInput"
+          placeholder="e.g. Review priorities"
+          autocomplete="off"
+          required
+        />
+      </label>
+
+      <label>
+        Time
+        <input id="routineTimeInput" type="time" value="09:00" required />
+      </label>
+
+      <label>
+        Repeats
         <select id="routineFrequencyInput">
           <option value="daily">Daily</option>
           <option value="weekly">Weekly</option>
           <option value="monthly">Monthly</option>
         </select>
       </label>
-      <label id="weekdayField" class="hidden">Day of week
+
+      <label id="weekdayField" class="hidden">
+        Day of week
         <select id="routineWeekdayInput">
-          <option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option>
-          <option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option>
+          <option value="1">Monday</option>
+          <option value="2">Tuesday</option>
+          <option value="3">Wednesday</option>
+          <option value="4">Thursday</option>
+          <option value="5">Friday</option>
+          <option value="6">Saturday</option>
+          <option value="0">Sunday</option>
         </select>
       </label>
-      <label id="monthdayField" class="hidden">Day of month
-        <input id="routineMonthdayInput" type="number" min="1" max="31" value="1" />
+
+      <label id="monthdayField" class="hidden">
+        Day of month
+        <input
+          id="routineMonthdayInput"
+          type="number"
+          min="1"
+          max="31"
+          value="1"
+        />
       </label>
     </div>
+
     <div class="dialog-actions">
-      <button type="button" id="cancelRoutineButton" class="cancel-routine">cancel</button>
-      <button type="submit" class="save-routine">save routine</button>
+      <button
+        type="button"
+        id="cancelRoutineButton"
+        class="cancel-routine"
+      >
+        cancel
+      </button>
+
+      <button type="submit" class="save-routine">
+        save routine
+      </button>
     </div>
+
     <div id="routineDialogError" class="error"></div>
   </form>
 </dialog>
