@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minddrop</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="./app.html">
+      <svg viewBox="0 0 32 40" fill="none" aria-hidden="true">
+        <path d="M16 2C15 9 7 14 7 24c0 7 4 12 9 12s9-5 9-12C25 14 17 9 16 2Z" stroke="currentColor" stroke-width="2.2"/>
+        <path d="M12 28c1.5 2.5 5.5 3.5 8 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <span>minddrop</span>
+    </a>
+    <div class="top-actions">
+      <span id="syncState" class="sync-state">connecting…</span>
+      <button id="signOutButton" class="icon-button" title="Sign out">↪</button>
+      <button id="lockButton" class="icon-button" title="Lock">⌁</button>
+      <button id="themeToggle" class="icon-button" title="Switch theme">☾</button>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <h1 id="dashboardGreeting">hey</h1>
+    <div id="dashboardMotivation" class="dashboard-copy"></div>
+
+    <div class="capture">
+      <input id="taskInput" placeholder="Add a task or reminder…" autocomplete="off" />
+    </div>
+
+    <div class="routine-panel">
+      <div class="panel-heading">
+        <h2 id="routineHeading">daily routine</h2>
+        <button id="addRoutineButton" class="add-routine-button">+ add routine</button>
+      </div>
+
+      <div class="routine-tabs">
+        <button class="routine-tab active" data-frequency="daily">daily</button>
+        <button class="routine-tab" data-frequency="weekly">weekly</button>
+        <button class="routine-tab" data-frequency="monthly">monthly</button>
+      </div>
+
+      <div id="routineList"></div>
+
+      <div class="captured">
+        <h3>captured tasks</h3>
+        <div id="taskList"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<dialog id="routineDialog">
+  <form id="routineForm" class="dialog-card">
+    <h2>add a routine</h2>
+    <div class="dialog-grid">
+      <label>Routine<input id="routineTitleInput" placeholder="e.g. Review priorities" required /></label>
+      <label>Time<input id="routineTimeInput" type="time" value="09:00" required /></label>
+      <label>Repeats
+        <select id="routineFrequencyInput">
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+        </select>
+      </label>
+      <label id="weekdayField" class="hidden">Day of week
+        <select id="routineWeekdayInput">
+          <option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option>
+          <option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option>
+        </select>
+      </label>
+      <label id="monthdayField" class="hidden">Day of month
+        <input id="routineMonthdayInput" type="number" min="1" max="31" value="1" />
+      </label>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" id="cancelRoutineButton" class="cancel-routine">cancel</button>
+      <button type="submit" class="save-routine">save routine</button>
+    </div>
+    <div id="routineDialogError" class="error"></div>
+  </form>
+</dialog>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>

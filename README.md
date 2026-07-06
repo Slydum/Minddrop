@@ -1,86 +1,18 @@
-# Minddrop + Supabase
+# Minddrop split structure
 
-A static, GitHub Pages-friendly starter for Minddrop.
+Upload these files to the root of the GitHub repository:
 
-## 1. Create the Supabase project
+- index.html
+- app.html
+- styles.css
+- auth.js
+- app.js
+- config.js
 
-1. Create a new project in Supabase.
-2. Open **SQL Editor**.
-3. Paste and run `supabase/schema.sql`.
-4. Open **Project Settings → API**.
-5. Copy the project URL and publishable key.
-6. Paste both values into `config.js`.
+Flow:
+- index.html handles signup, sign-in, and PIN.
+- app.html handles the dashboard.
+- auth.js redirects to app.html after a valid PIN.
+- app.js redirects back to index.html if the user is not signed in or unlocked.
 
-Do not put a `service_role` key in this website. The browser should only use
-the publishable/anon key, with Row Level Security protecting each user's data.
-
-## 2. Configure authentication
-
-In Supabase:
-
-1. Go to **Authentication → URL Configuration**.
-2. Set **Site URL** to your future GitHub Pages URL:
-   `https://YOUR-GITHUB-USERNAME.github.io/YOUR-REPOSITORY/`
-3. Add the same URL under redirect URLs.
-4. Email/password authentication can remain enabled.
-
-For faster testing, you may temporarily disable email confirmation in the
-email provider settings. Re-enable it before sharing the app publicly.
-
-## 3. Test locally
-
-Because the app uses JavaScript modules, serve the folder rather than opening
-`index.html` directly:
-
-```bash
-python -m http.server 8000
-```
-
-Then visit:
-
-```text
-http://localhost:8000
-```
-
-## 4. Push to GitHub
-
-```bash
-git init
-git add .
-git commit -m "Initial Minddrop Supabase app"
-git branch -M main
-git remote add origin https://github.com/YOUR-USERNAME/minddrop.git
-git push -u origin main
-```
-
-## 5. Turn on GitHub Pages
-
-1. Open the repository's **Settings**.
-2. Choose **Pages**.
-3. Under source, select **Deploy from a branch**.
-4. Select `main` and `/ (root)`.
-5. Save.
-
-After GitHub gives you the public URL, add it to the Supabase authentication
-Site URL and redirect URL settings.
-
-## Current behavior
-
-- Works locally without Supabase using browser local storage.
-- Uses Supabase after a user signs in.
-- Each user can only read and modify their own rows because RLS is enabled.
-- Enter saves; Shift+Enter creates a new line.
-- Tasks are automatically sorted into four categories.
-- Dark and beige light modes are included.
-
-## Next database tables
-
-After the first deployment works, add:
-
-- `daily_routines`
-- `weekly_routines`
-- `routine_completions`
-- `user_preferences`
-
-Keep the first release small until sign-in, saving, loading, updating, and
-deleting are confirmed.
+Keep the existing Supabase SQL setup and routine migration already run in the project.
