@@ -1,8 +1,16 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./config.js";
+import {
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+} from "./config.js";
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+);
+
 const $ = id => document.getElementById(id);
+
 const motivations = [
   "You only need to do the next small thing.",
   "Done imperfectly is still done.",
@@ -17,211 +25,655 @@ let tasks = [];
 let activeRoutineFrequency = "daily";
 let realtimeChannel = null;
 
-function escapeHtml(v){
-  return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+function escapeHtml(value) {
+  return String(value).replace(
+    /[&<>"']/g,
+    character =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      })[character]
+  );
 }
 
-function applyTheme(theme){
+function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
-  $("themeToggle").textContent = theme === "light" ? "☾" : "☼";
+
+  $("themeToggle").textContent =
+    theme === "light" ? "☾" : "☼";
+
   localStorage.setItem("minddrop-theme", theme);
 }
-$("themeToggle").onclick = () => applyTheme(document.documentElement.dataset.theme === "light" ? "dark" : "light");
-applyTheme(localStorage.getItem("minddrop-theme") || "light");
 
-async function loadProfile(){
-  const { data,error } = await supabase.from("profiles").select("*").eq("id",session.user.id).maybeSingle();
-  if(error) throw error;
+$("themeToggle").onclick = () => {
+  const nextTheme =
+    document.documentElement.dataset.theme === "light"
+      ? "dark"
+      : "light";
+
+  applyTheme(nextTheme);
+};
+
+applyTheme(
+  localStorage.getItem("minddrop-theme") || "light"
+);
+
+async function loadProfile() {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", session.user.id)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
   profile = data;
 }
 
-async function loadData(){
-  const [r,t] = await Promise.all([
-    supabase.from("routines").select("*").order("time_of_day"),
-    supabase.from("tasks").select("*").order("created_at",{ascending:false})
-  ]);
-  if(r.error) throw r.error;
-  if(t.error) throw t.error;
-  routines = r.data || [];
-  tasks = t.data || [];
+async function loadData() {
+  const [routineResult, taskResult] =
+    await Promise.all([
+      supabase
+        .from("routines")
+        .select("*")
+        .order("time_of_day"),
+
+      supabase
+        .from("tasks")
+        .select("*")
+        .order("created_at", {
+          ascending: false
+        })
+    ]);
+
+  if (routineResult.error) {
+    throw routineResult.error;
+  }
+
+  if (taskResult.error) {
+    throw taskResult.error;
+  }
+
+  routines = routineResult.data || [];
+  tasks = taskResult.data || [];
+
   renderRoutines();
   renderTasks();
 }
 
-function realtimeStart(){
-  if(realtimeChannel) supabase.removeChannel(realtimeChannel);
-  realtimeChannel = supabase.channel(`minddrop-${session.user.id}`)
-    .on("postgres_changes",{event:"*",schema:"public",table:"tasks",filter:`user_id=eq.${session.user.id}`},loadData)
-    .on("postgres_changes",{event:"*",schema:"public",table:"routines",filter:`user_id=eq.${session.user.id}`},loadData)
-    .subscribe(status => $("syncState").textContent = status === "SUBSCRIBED" ? "live sync" : "connecting…");
+function realtimeStart() {
+  if (realtimeChannel) {
+    supabase.removeChannel(realtimeChannel);
+  }
+
+  realtimeChannel = supabase
+    .channel(`minddrop-${session.user.id}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "tasks",
+        filter: `user_id=eq.${session.user.id}`
+      },
+      loadData
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "routines",
+        filter: `user_id=eq.${session.user.id}`
+      },
+      loadData
+    )
+    .subscribe(status => {
+      $("syncState").textContent =
+        status === "SUBSCRIBED"
+          ? "live sync"
+          : "connecting…";
+    });
 }
 
-function formatTime(v){
-  const [h,m]=v.slice(0,5).split(":").map(Number);
-  const d=new Date();
-  d.setHours(h,m);
-  return d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});
+function formatTime(value) {
+  const [hours, minutes] = value
+    .slice(0, 5)
+    .split(":")
+    .map(Number);
+
+  const date = new Date();
+
+  date.setHours(hours, minutes);
+
+  return date.toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit"
+  });
 }
 
-function routineOccursToday(routine){
+function routineOccursToday(routine) {
   const now = new Date();
-  if(routine.frequency === "daily") return true;
-  if(routine.frequency === "weekly") return routine.weekday === now.getDay();
-  if(routine.frequency === "monthly") return routine.monthday === now.getDate();
+
+  if (routine.frequency === "daily") {
+    return true;
+  }
+
+  if (routine.frequency === "weekly") {
+    return routine.weekday === now.getDay();
+  }
+
+  if (routine.frequency === "monthly") {
+    return routine.monthday === now.getDate();
+  }
+
   return false;
 }
 
-function frequencyLabel(routine){
-  if(routine.frequency === "daily") return "every day";
-  if(routine.frequency === "weekly"){
-    return ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][routine.weekday] || "weekly";
+function frequencyLabel(routine) {
+  if (routine.frequency === "daily") {
+    return "every day";
   }
-  if(routine.frequency === "monthly") return `day ${routine.monthday} of each month`;
+
+  if (routine.frequency === "weekly") {
+    const weekdays = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday"
+    ];
+
+    return weekdays[routine.weekday] || "weekly";
+  }
+
+  if (routine.frequency === "monthly") {
+    return `day ${routine.monthday} of each month`;
+  }
+
   return routine.frequency;
 }
 
-function renderRoutines(){
-  const today = new Date().toISOString().slice(0,10);
-  const filtered = routines.filter(r => r.frequency === activeRoutineFrequency);
-  $("routineHeading").textContent = `${activeRoutineFrequency} routine`;
+function renderRoutines() {
+  const today = new Date()
+    .toISOString()
+    .slice(0, 10);
 
-  $("routineList").innerHTML = filtered.length ? filtered.map(r=>{
-    const done = r.completion_date === today;
-    const dueToday = routineOccursToday(r);
-    return `<div class="routine-item">
-      <div class="time">${formatTime(r.time_of_day)}</div>
-      <div>
-        <div class="task-title" style="${done ? "text-decoration:line-through;opacity:.55" : ""}">${escapeHtml(r.title)}</div>
-        <div class="routine-frequency">${escapeHtml(frequencyLabel(r))}${dueToday ? " · due today" : ""}</div>
+  const filtered = routines.filter(
+    routine =>
+      routine.frequency ===
+      activeRoutineFrequency
+  );
+
+  $("routineHeading").textContent =
+    `${activeRoutineFrequency} routine`;
+
+  if (!filtered.length) {
+    $("routineList").innerHTML = `
+      <div class="empty">
+        No ${activeRoutineFrequency} routines yet.
+        Add one when you’re ready.
       </div>
-      <button class="check ${done ? "done" : ""}" data-routine="${r.id}" data-done="${done}"></button>
-    </div>`;
-  }).join("") : `<div class="empty">No ${activeRoutineFrequency} routines yet. Add one when you’re ready.</div>`;
+    `;
 
-  document.querySelectorAll("[data-routine]").forEach(b=>{
-    b.onclick=()=>toggleRoutine(b.dataset.routine,b.dataset.done==="true");
-  });
+    return;
+  }
+
+  $("routineList").innerHTML = filtered
+    .map(routine => {
+      const done =
+        routine.completion_date === today;
+
+      const dueToday =
+        routineOccursToday(routine);
+
+      return `
+        <div class="routine-item">
+          <div class="time">
+            ${formatTime(routine.time_of_day)}
+          </div>
+
+          <div>
+            <div
+              class="task-title"
+              style="${
+                done
+                  ? "text-decoration:line-through;opacity:.55"
+                  : ""
+              }"
+            >
+              ${escapeHtml(routine.title)}
+            </div>
+
+            <div class="routine-frequency">
+              ${escapeHtml(
+                frequencyLabel(routine)
+              )}
+              ${dueToday ? " · due today" : ""}
+            </div>
+          </div>
+
+          <button
+            class="check ${done ? "done" : ""}"
+            data-routine="${routine.id}"
+            data-done="${done}"
+            aria-label="Complete routine"
+          ></button>
+        </div>
+      `;
+    })
+    .join("");
+
+  document
+    .querySelectorAll("[data-routine]")
+    .forEach(button => {
+      button.onclick = () => {
+        toggleRoutine(
+          button.dataset.routine,
+          button.dataset.done === "true"
+        );
+      };
+    });
 }
 
-function renderTasks(){
-  const visible = tasks.filter(t=>!t.completed);
-  $("taskList").innerHTML = visible.length ? visible.map(t=>`<div class="task-item">
-    <button class="check" data-task="${t.id}"></button>
-    <div><div class="task-title">${escapeHtml(t.title)}</div><div class="task-meta">captured task</div></div>
-    <button class="delete" data-delete="${t.id}">×</button>
-  </div>`).join("") : `<div class="empty">Nothing captured yet.</div>`;
+function renderTasks() {
+  const visibleTasks = tasks.filter(
+    task => !task.completed
+  );
 
-  document.querySelectorAll("[data-task]").forEach(b=>b.onclick=()=>toggleTask(b.dataset.task,false));
-  document.querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>deleteTask(b.dataset.delete));
+  if (!visibleTasks.length) {
+    $("taskList").innerHTML = `
+      <div class="empty">
+        Nothing captured yet.
+      </div>
+    `;
+
+    return;
+  }
+
+  $("taskList").innerHTML = visibleTasks
+    .map(task => {
+      return `
+        <div class="task-item">
+          <button
+            class="check"
+            data-task="${task.id}"
+            aria-label="Complete task"
+          ></button>
+
+          <div>
+            <div class="task-title">
+              ${escapeHtml(task.title)}
+            </div>
+
+            <div class="task-meta">
+              captured task
+            </div>
+          </div>
+
+          <button
+            class="delete"
+            data-delete="${task.id}"
+            aria-label="Delete task"
+          >
+            ×
+          </button>
+        </div>
+      `;
+    })
+    .join("");
+
+  document
+    .querySelectorAll("[data-task]")
+    .forEach(button => {
+      button.onclick = () => {
+        toggleTask(
+          button.dataset.task,
+          false
+        );
+      };
+    });
+
+  document
+    .querySelectorAll("[data-delete]")
+    .forEach(button => {
+      button.onclick = () => {
+        deleteTask(button.dataset.delete);
+      };
+    });
 }
 
-async function toggleRoutine(id,done){
-  await supabase.from("routines").update({
-    completion_date:done ? null : new Date().toISOString().slice(0,10)
-  }).eq("id",id);
+async function toggleRoutine(id, done) {
+  const routine = routines.find(
+    item => item.id === id
+  );
+
+  if (!routine) {
+    return;
+  }
+
+  const previousDate =
+    routine.completion_date;
+
+  const nextDate = done
+    ? null
+    : new Date()
+        .toISOString()
+        .slice(0, 10);
+
+  // Change the checkbox immediately.
+  routine.completion_date = nextDate;
+  renderRoutines();
+
+  const { error } = await supabase
+    .from("routines")
+    .update({
+      completion_date: nextDate
+    })
+    .eq("id", id);
+
+  // Undo the visual change if syncing fails.
+  if (error) {
+    routine.completion_date = previousDate;
+    renderRoutines();
+    alert(error.message);
+  }
 }
 
-async function toggleTask(id,done){
-  await supabase.from("tasks").update({completed:!done}).eq("id",id);
+async function toggleTask(id, done) {
+  const task = tasks.find(
+    item => item.id === id
+  );
+
+  if (!task) {
+    return;
+  }
+
+  const previousValue = task.completed;
+
+  // Change the interface immediately.
+  task.completed = !done;
+  renderTasks();
+
+  const { error } = await supabase
+    .from("tasks")
+    .update({
+      completed: !done
+    })
+    .eq("id", id);
+
+  if (error) {
+    task.completed = previousValue;
+    renderTasks();
+    alert(error.message);
+  }
 }
 
-async function deleteTask(id){
-  await supabase.from("tasks").delete().eq("id",id);
+async function deleteTask(id) {
+  const previousTasks = [...tasks];
+
+  tasks = tasks.filter(
+    task => task.id !== id
+  );
+
+  renderTasks();
+
+  const { error } = await supabase
+    .from("tasks")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    tasks = previousTasks;
+    renderTasks();
+    alert(error.message);
+  }
 }
 
-$("taskInput").onkeydown = async e => {
-  if(e.key !== "Enter") return;
-  const title = $("taskInput").value.trim();
-  if(!title) return;
-  const { error } = await supabase.from("tasks").insert({user_id:session.user.id,title});
-  if(error){ alert(error.message); return; }
+$("taskInput").onkeydown = async event => {
+  if (event.key !== "Enter") {
+    return;
+  }
+
+  const title =
+    $("taskInput").value.trim();
+
+  if (!title) {
+    return;
+  }
+
+  const temporaryTask = {
+    id: `temporary-${Date.now()}`,
+    title,
+    completed: false,
+    created_at: new Date().toISOString()
+  };
+
+  // Show the task immediately.
+  tasks.unshift(temporaryTask);
   $("taskInput").value = "";
+  renderTasks();
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .insert({
+      user_id: session.user.id,
+      title
+    })
+    .select()
+    .single();
+
+  if (error) {
+    tasks = tasks.filter(
+      task =>
+        task.id !== temporaryTask.id
+    );
+
+    renderTasks();
+    alert(error.message);
+    return;
+  }
+
+  tasks = tasks.map(task =>
+    task.id === temporaryTask.id
+      ? data
+      : task
+  );
+
+  renderTasks();
 };
 
-document.querySelectorAll(".routine-tab").forEach(button => {
-  button.onclick = () => {
-    activeRoutineFrequency = button.dataset.frequency;
-    document.querySelectorAll(".routine-tab").forEach(x => x.classList.toggle("active", x === button));
-    renderRoutines();
-  };
-});
+document
+  .querySelectorAll(".routine-tab")
+  .forEach(button => {
+    button.onclick = () => {
+      activeRoutineFrequency =
+        button.dataset.frequency;
 
-function updateRoutineFields(){
-  const frequency = $("routineFrequencyInput").value;
-  $("weekdayField").classList.toggle("hidden", frequency !== "weekly");
-  $("monthdayField").classList.toggle("hidden", frequency !== "monthly");
+      document
+        .querySelectorAll(".routine-tab")
+        .forEach(tab => {
+          tab.classList.toggle(
+            "active",
+            tab === button
+          );
+        });
+
+      renderRoutines();
+    };
+  });
+
+function updateRoutineFields() {
+  const frequency =
+    $("routineFrequencyInput").value;
+
+  $("weekdayField").classList.toggle(
+    "hidden",
+    frequency !== "weekly"
+  );
+
+  $("monthdayField").classList.toggle(
+    "hidden",
+    frequency !== "monthly"
+  );
 }
 
-$("routineFrequencyInput").onchange = updateRoutineFields;
+$("routineFrequencyInput").onchange =
+  updateRoutineFields;
 
 $("addRoutineButton").onclick = () => {
   $("routineForm").reset();
+
   $("routineTimeInput").value = "09:00";
-  $("routineFrequencyInput").value = activeRoutineFrequency;
+
+  $("routineFrequencyInput").value =
+    activeRoutineFrequency;
+
   updateRoutineFields();
+
   $("routineDialogError").textContent = "";
+
   $("routineDialog").showModal();
-  setTimeout(() => $("routineTitleInput").focus(),250);
+
+  setTimeout(() => {
+    $("routineTitleInput").focus();
+  }, 250);
 };
 
-$("cancelRoutineButton").onclick = () => $("routineDialog").close();
-
-$("routineForm").onsubmit = async event => {
-  event.preventDefault();
-
-  const title = $("routineTitleInput").value.trim();
-  const frequency = $("routineFrequencyInput").value;
-  const weekday = frequency === "weekly" ? Number($("routineWeekdayInput").value) : null;
-  const monthday = frequency === "monthly" ? Number($("routineMonthdayInput").value) : null;
-
-  if(!title){
-    $("routineDialogError").textContent = "Enter a routine name.";
-    return;
-  }
-
-  const { error } = await supabase.from("routines").insert({
-    user_id:session.user.id,
-    title,
-    time_of_day:$("routineTimeInput").value,
-    frequency,
-    weekday,
-    monthday,
-    sort_order:routines.length
-  });
-
-  if(error){
-    $("routineDialogError").textContent = error.message;
-    return;
-  }
-
-  activeRoutineFrequency = frequency;
-  document.querySelectorAll(".routine-tab").forEach(x => {
-    x.classList.toggle("active", x.dataset.frequency === frequency);
-  });
-
+$("cancelRoutineButton").onclick = () => {
   $("routineDialog").close();
 };
 
+$("routineForm").onsubmit =
+  async event => {
+    event.preventDefault();
+
+    const title =
+      $("routineTitleInput").value.trim();
+
+    const frequency =
+      $("routineFrequencyInput").value;
+
+    const weekday =
+      frequency === "weekly"
+        ? Number(
+            $("routineWeekdayInput").value
+          )
+        : null;
+
+    const monthday =
+      frequency === "monthly"
+        ? Number(
+            $("routineMonthdayInput").value
+          )
+        : null;
+
+    if (!title) {
+      $("routineDialogError").textContent =
+        "Enter a routine name.";
+
+      return;
+    }
+
+    $("routineDialogError").textContent =
+      "Saving…";
+
+    const { data, error } = await supabase
+      .from("routines")
+      .insert({
+        user_id: session.user.id,
+        title,
+        time_of_day:
+          $("routineTimeInput").value,
+        frequency,
+        weekday,
+        monthday,
+        sort_order: routines.length
+      })
+      .select()
+      .single();
+
+    if (error) {
+      $("routineDialogError").textContent =
+        error.message;
+
+      return;
+    }
+
+    routines.push(data);
+
+    activeRoutineFrequency = frequency;
+
+    document
+      .querySelectorAll(".routine-tab")
+      .forEach(tab => {
+        tab.classList.toggle(
+          "active",
+          tab.dataset.frequency ===
+            frequency
+        );
+      });
+
+    renderRoutines();
+
+    $("routineDialog").close();
+};
+
 $("lockButton").onclick = () => {
-  sessionStorage.removeItem("minddrop-unlocked");
+  sessionStorage.removeItem(
+    "minddrop-unlocked"
+  );
+
   location.href = "./index.html";
 };
 
 $("signOutButton").onclick = async () => {
-  sessionStorage.removeItem("minddrop-unlocked");
+  sessionStorage.removeItem(
+    "minddrop-unlocked"
+  );
+
   await supabase.auth.signOut();
+
   location.href = "./index.html";
 };
 
-const { data:{session:initialSession} } = await supabase.auth.getSession();
+const {
+  data: {
+    session: initialSession
+  }
+} = await supabase.auth.getSession();
+
 session = initialSession;
 
-if(!session || sessionStorage.getItem("minddrop-unlocked") !== "yes"){
+if (
+  !session ||
+  sessionStorage.getItem(
+    "minddrop-unlocked"
+  ) !== "yes"
+) {
   location.href = "./index.html";
-}else{
+} else {
   await loadProfile();
-  $("dashboardGreeting").textContent = `hey, ${profile.name}`;
-  $("dashboardMotivation").textContent = motivations[Math.floor(Math.random()*motivations.length)];
+
+  $("dashboardGreeting").textContent =
+    `hey, ${profile.name}`;
+
+  $("dashboardMotivation").textContent =
+    motivations[
+      Math.floor(
+        Math.random() *
+          motivations.length
+      )
+    ];
+
   await loadData();
+
   realtimeStart();
 }
