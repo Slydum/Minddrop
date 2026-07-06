@@ -28,14 +28,13 @@ let realtimeChannel = null;
 function escapeHtml(value) {
   return String(value).replace(
     /[&<>"']/g,
-    character =>
-      ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
-      })[character]
+    character => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
+    })[character]
   );
 }
 
@@ -49,12 +48,12 @@ function applyTheme(theme) {
 }
 
 $("themeToggle").onclick = () => {
-  const nextTheme =
-    document.documentElement.dataset.theme === "light"
-      ? "dark"
-      : "light";
+  const currentTheme =
+    document.documentElement.dataset.theme;
 
-  applyTheme(nextTheme);
+  applyTheme(
+    currentTheme === "light" ? "dark" : "light"
+  );
 };
 
 applyTheme(
@@ -113,6 +112,7 @@ function realtimeStart() {
 
   realtimeChannel = supabase
     .channel(`minddrop-${session.user.id}`)
+
     .on(
       "postgres_changes",
       {
@@ -123,6 +123,7 @@ function realtimeStart() {
       },
       loadData
     )
+
     .on(
       "postgres_changes",
       {
@@ -133,6 +134,7 @@ function realtimeStart() {
       },
       loadData
     )
+
     .subscribe(status => {
       $("syncState").textContent =
         status === "SUBSCRIBED"
@@ -142,14 +144,12 @@ function realtimeStart() {
 }
 
 function formatTime(value) {
-  const [hours, minutes] = value
-    .slice(0, 5)
-    .split(":")
-    .map(Number);
+  const [hour, minute] =
+    value.slice(0, 5).split(":").map(Number);
 
   const date = new Date();
 
-  date.setHours(hours, minutes);
+  date.setHours(hour, minute);
 
   return date.toLocaleTimeString([], {
     hour: "numeric",
@@ -202,20 +202,18 @@ function frequencyLabel(routine) {
 }
 
 function renderRoutines() {
-  const today = new Date()
-    .toISOString()
-    .slice(0, 10);
+  const today =
+    new Date().toISOString().slice(0, 10);
 
-  const filtered = routines.filter(
+  const filteredRoutines = routines.filter(
     routine =>
-      routine.frequency ===
-      activeRoutineFrequency
+      routine.frequency === activeRoutineFrequency
   );
 
   $("routineHeading").textContent =
     `${activeRoutineFrequency} routine`;
 
-  if (!filtered.length) {
+  if (!filteredRoutines.length) {
     $("routineList").innerHTML = `
       <div class="empty">
         No ${activeRoutineFrequency} routines yet.
@@ -226,8 +224,8 @@ function renderRoutines() {
     return;
   }
 
-  $("routineList").innerHTML = filtered
-    .map(routine => {
+  $("routineList").innerHTML =
+    filteredRoutines.map(routine => {
       const done =
         routine.completion_date === today;
 
@@ -253,9 +251,7 @@ function renderRoutines() {
             </div>
 
             <div class="routine-frequency">
-              ${escapeHtml(
-                frequencyLabel(routine)
-              )}
+              ${escapeHtml(frequencyLabel(routine))}
               ${dueToday ? " · due today" : ""}
             </div>
           </div>
@@ -268,8 +264,7 @@ function renderRoutines() {
           ></button>
         </div>
       `;
-    })
-    .join("");
+    }).join("");
 
   document
     .querySelectorAll("[data-routine]")
@@ -284,9 +279,8 @@ function renderRoutines() {
 }
 
 function renderTasks() {
-  const visibleTasks = tasks.filter(
-    task => !task.completed
-  );
+  const visibleTasks =
+    tasks.filter(task => !task.completed);
 
   if (!visibleTasks.length) {
     $("taskList").innerHTML = `
@@ -298,37 +292,34 @@ function renderTasks() {
     return;
   }
 
-  $("taskList").innerHTML = visibleTasks
-    .map(task => {
-      return `
-        <div class="task-item">
-          <button
-            class="check"
-            data-task="${task.id}"
-            aria-label="Complete task"
-          ></button>
+  $("taskList").innerHTML =
+    visibleTasks.map(task => `
+      <div class="task-item">
+        <button
+          class="check"
+          data-task="${task.id}"
+          aria-label="Complete task"
+        ></button>
 
-          <div>
-            <div class="task-title">
-              ${escapeHtml(task.title)}
-            </div>
-
-            <div class="task-meta">
-              captured task
-            </div>
+        <div>
+          <div class="task-title">
+            ${escapeHtml(task.title)}
           </div>
 
-          <button
-            class="delete"
-            data-delete="${task.id}"
-            aria-label="Delete task"
-          >
-            ×
-          </button>
+          <div class="task-meta">
+            captured task
+          </div>
         </div>
-      `;
-    })
-    .join("");
+
+        <button
+          class="delete"
+          data-delete="${task.id}"
+          aria-label="Delete task"
+        >
+          ×
+        </button>
+      </div>
+    `).join("");
 
   document
     .querySelectorAll("[data-task]")
@@ -364,11 +355,12 @@ async function toggleRoutine(id, done) {
 
   const nextDate = done
     ? null
-    : new Date()
-        .toISOString()
-        .slice(0, 10);
+    : new Date().toISOString().slice(0, 10);
 
-  // Change the checkbox immediately.
+  /*
+    Update the page immediately.
+    The user does not have to wait for Supabase.
+  */
   routine.completion_date = nextDate;
   renderRoutines();
 
@@ -379,7 +371,10 @@ async function toggleRoutine(id, done) {
     })
     .eq("id", id);
 
-  // Undo the visual change if syncing fails.
+  /*
+    If syncing fails, return the checkbox
+    to its previous state.
+  */
   if (error) {
     routine.completion_date = previousDate;
     renderRoutines();
@@ -398,7 +393,9 @@ async function toggleTask(id, done) {
 
   const previousValue = task.completed;
 
-  // Change the interface immediately.
+  /*
+    Update the page immediately.
+  */
   task.completed = !done;
   renderTasks();
 
@@ -449,45 +446,19 @@ $("taskInput").onkeydown = async event => {
     return;
   }
 
-  const temporaryTask = {
-    id: `temporary-${Date.now()}`,
-    title,
-    completed: false,
-    created_at: new Date().toISOString()
-  };
-
-  // Show the task immediately.
-  tasks.unshift(temporaryTask);
-  $("taskInput").value = "";
-  renderTasks();
-
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("tasks")
     .insert({
       user_id: session.user.id,
       title
-    })
-    .select()
-    .single();
+    });
 
   if (error) {
-    tasks = tasks.filter(
-      task =>
-        task.id !== temporaryTask.id
-    );
-
-    renderTasks();
     alert(error.message);
     return;
   }
 
-  tasks = tasks.map(task =>
-    task.id === temporaryTask.id
-      ? data
-      : task
-  );
-
-  renderTasks();
+  $("taskInput").value = "";
 };
 
 document
@@ -582,10 +553,7 @@ $("routineForm").onsubmit =
       return;
     }
 
-    $("routineDialogError").textContent =
-      "Saving…";
-
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("routines")
       .insert({
         user_id: session.user.id,
@@ -596,9 +564,7 @@ $("routineForm").onsubmit =
         weekday,
         monthday,
         sort_order: routines.length
-      })
-      .select()
-      .single();
+      });
 
     if (error) {
       $("routineDialogError").textContent =
@@ -607,8 +573,6 @@ $("routineForm").onsubmit =
       return;
     }
 
-    routines.push(data);
-
     activeRoutineFrequency = frequency;
 
     document
@@ -616,15 +580,12 @@ $("routineForm").onsubmit =
       .forEach(tab => {
         tab.classList.toggle(
           "active",
-          tab.dataset.frequency ===
-            frequency
+          tab.dataset.frequency === frequency
         );
       });
 
-    renderRoutines();
-
     $("routineDialog").close();
-};
+  };
 
 $("lockButton").onclick = () => {
   sessionStorage.removeItem(
@@ -668,12 +629,10 @@ if (
   $("dashboardMotivation").textContent =
     motivations[
       Math.floor(
-        Math.random() *
-          motivations.length
+        Math.random() * motivations.length
       )
     ];
 
   await loadData();
-
   realtimeStart();
 }
