@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Minddrop</title>
-
   <style>
     :root{
       --bg:#f3ecdf;
@@ -37,16 +36,12 @@
     }
 
     *{box-sizing:border-box}
-
-    html,body{
-      margin:0;
-      min-height:100%;
-    }
+    html,body{margin:0;min-height:100%}
 
     body{
       min-height:100vh;
       background:
-        radial-gradient(circle at 50% 25%,rgba(217,170,61,.08),transparent 28%),
+        radial-gradient(circle at 50% 20%,rgba(217,170,61,.08),transparent 28%),
         var(--bg);
       color:var(--text);
       font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -59,7 +54,7 @@
 
     .page{
       min-height:100vh;
-      padding:18px 7vw 48px;
+      padding:18px 7vw 70px;
     }
 
     .topbar{
@@ -110,7 +105,7 @@
 
     .app-main{
       width:min(900px,100%);
-      margin:75px auto 0;
+      margin:72px auto 0;
       text-align:center;
     }
 
@@ -147,9 +142,7 @@
       font-size:16px;
     }
 
-    .capture input::placeholder{
-      color:var(--muted);
-    }
+    .capture input::placeholder{color:var(--muted)}
 
     .routine-panel{
       padding:22px;
@@ -222,9 +215,7 @@
       background:var(--panel2);
     }
 
-    .task-item{
-      grid-template-columns:18px 1fr auto;
-    }
+    .task-item{grid-template-columns:18px 1fr auto}
 
     .time{
       color:var(--accent);
@@ -264,9 +255,7 @@
       font-size:17px;
     }
 
-    .delete:hover{
-      color:var(--error);
-    }
+    .delete:hover{color:var(--error)}
 
     .captured{
       margin-top:16px;
@@ -295,23 +284,16 @@
       box-shadow:var(--shadow);
     }
 
-    dialog::backdrop{
-      background:rgba(0,0,0,.48);
-    }
+    dialog::backdrop{background:rgba(0,0,0,.48)}
 
-    .dialog-card{
-      padding:22px;
-    }
+    .dialog-card{padding:22px}
 
     .dialog-card h2{
       margin:0 0 16px;
       font:500 25px Georgia,"Times New Roman",serif;
     }
 
-    .dialog-grid{
-      display:grid;
-      gap:12px;
-    }
+    .dialog-grid{display:grid;gap:12px}
 
     .dialog-grid label{
       display:block;
@@ -369,16 +351,158 @@
       font-size:11px;
     }
 
-    @media(max-width:600px){
-      .page{padding:16px 14px 30px}
+    /* Calendar begins below the first viewport */
+    .calendar-section{
+      width:min(1100px,100%);
+      margin:62vh auto 0;
+      padding-top:30px;
+      scroll-margin-top:30px;
+    }
+
+    .calendar-shell{
+      padding:24px;
+      border:1px solid var(--field-border);
+      border-radius:24px;
+      background:var(--panel);
+      box-shadow:var(--shadow);
+    }
+
+    .calendar-heading{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      margin-bottom:18px;
+    }
+
+    .calendar-heading h2{
+      margin:0;
+      font:500 30px Georgia,"Times New Roman",serif;
+    }
+
+    .calendar-subtitle{
+      margin-top:5px;
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    .calendar-controls{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .calendar-controls button{
+      min-width:38px;
+      height:38px;
+      padding:0 11px;
+      border:1px solid var(--field-border);
+      border-radius:10px;
+      background:transparent;
+      color:var(--muted);
+    }
+
+    .calendar-controls button:hover{
+      border-color:var(--accent);
+      color:var(--accent);
+    }
+
+    .calendar-grid{
+      display:grid;
+      grid-template-columns:repeat(7,minmax(0,1fr));
+      gap:8px;
+    }
+
+    .calendar-weekday{
+      padding:7px;
+      color:var(--muted);
+      font-size:10px;
+      text-align:center;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+    }
+
+    .calendar-day{
+      min-height:132px;
+      padding:10px;
+      border:1px solid var(--field-border);
+      border-radius:14px;
+      background:var(--panel2);
+    }
+
+    .calendar-day.outside{opacity:.36}
+
+    .calendar-day.today{
+      border-color:var(--accent);
+      box-shadow:inset 0 0 0 1px var(--accent);
+    }
+
+    .calendar-date{
+      margin-bottom:8px;
+      color:var(--muted);
+      font-size:11px;
+      font-weight:800;
+    }
+
+    .calendar-entry{
+      display:block;
+      margin-top:5px;
+      padding:5px 7px;
+      overflow:hidden;
+      border-radius:8px;
+      background:var(--panel);
+      color:var(--text);
+      font-size:10px;
+      line-height:1.25;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    .calendar-entry.routine{border-left:3px solid var(--accent)}
+    .calendar-entry.task{border-left:3px solid var(--muted)}
+
+    .calendar-unscheduled{
+      margin-top:20px;
+      padding-top:16px;
+      border-top:1px solid var(--field-border);
+    }
+
+    .calendar-unscheduled h3{
+      margin:0 0 10px;
+      font:500 19px Georgia,"Times New Roman",serif;
+    }
+
+    .calendar-unscheduled-item{
+      padding:10px 12px;
+      margin-bottom:8px;
+      border:1px solid var(--field-border);
+      border-radius:10px;
+      background:var(--panel2);
+      font-size:11px;
+    }
+
+    @media(max-width:700px){
+      .page{padding:16px 14px 40px}
       .brand{font-size:24px}
       .sync-state{display:none}
       .app-main{margin-top:55px}
       .routine-panel{padding:17px}
       .panel-heading{align-items:flex-start}
+      .calendar-section{margin-top:48vh}
+      .calendar-shell{padding:14px}
+      .calendar-heading{align-items:flex-start;flex-direction:column}
+      .calendar-day{min-height:78px;padding:6px}
+      .calendar-entry{
+        width:8px;
+        height:8px;
+        padding:0;
+        border:0!important;
+        border-radius:50%;
+        background:var(--accent);
+        font-size:0;
+      }
     }
   </style>
-
 </head>
 <body>
 <div class="page">
@@ -409,18 +533,18 @@
 
     <section class="routine-panel">
       <div class="panel-heading">
-        <h2 id="routineHeading">daily routine</h2>
+        <h2 id="routineHeading">today’s routine</h2>
         <button id="addRoutineButton" class="add-routine-button">+ add routine</button>
       </div>
 
       <div class="routine-tabs" role="tablist" aria-label="Routine frequency">
-        <button class="routine-tab active" data-frequency="daily" role="tab">daily</button>
+        <button class="routine-tab active" data-frequency="today" role="tab">today</button>
         <button class="routine-tab" data-frequency="weekly" role="tab">weekly</button>
         <button class="routine-tab" data-frequency="monthly" role="tab">monthly</button>
       </div>
 
       <div id="routineList">
-        <div class="empty">No daily routines yet. Add one when you’re ready.</div>
+        <div class="empty">Nothing is due today. Add a routine when you’re ready.</div>
       </div>
 
       <div class="captured">
@@ -428,6 +552,31 @@
         <div id="taskList">
           <div class="empty">Nothing captured yet.</div>
         </div>
+      </div>
+    </section>
+
+
+    <section id="calendarSection" class="calendar-section">
+      <div class="calendar-shell">
+        <div class="calendar-heading">
+          <div>
+            <h2 id="calendarTitle">calendar</h2>
+            <div class="calendar-subtitle">Your routines and scheduled tasks in one place.</div>
+          </div>
+
+          <div class="calendar-controls">
+            <button id="calendarPrevious" type="button" aria-label="Previous month">‹</button>
+            <button id="calendarToday" type="button">today</button>
+            <button id="calendarNext" type="button" aria-label="Next month">›</button>
+          </div>
+        </div>
+
+        <div class="calendar-grid" id="calendarGrid"></div>
+
+        <section class="calendar-unscheduled">
+          <h3>unscheduled tasks</h3>
+          <div id="unscheduledTaskList"></div>
+        </section>
       </div>
     </section>
   </main>
@@ -504,6 +653,9 @@
     <div id="routineDialogError" class="error"></div>
   </form>
 </dialog>
+
+
+
 
 <script type="module" src="./app.js"></script>
 </body>
