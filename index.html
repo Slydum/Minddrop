@@ -147,12 +147,6 @@
       <div id="passwordError" class="error"></div>
     </section>
 
-    <section id="confirmEmailScreen" class="screen">
-      <h1>check your email</h1>
-      <p class="welcome-copy">Tap the confirmation link, then return here and sign in.</p>
-      <button id="confirmToSignIn" class="text-link">continue to sign in</button>
-    </section>
-
     <section id="signInEmailScreen" class="screen">
       <h1>welcome back</h1><p class="subquestion">what’s your email?</p>
       <div class="answer-card"><input id="signInEmail" type="email" placeholder="you@example.com" autocomplete="email" /></div>
@@ -212,7 +206,7 @@
 
   const ids = [
     "loadingScreen","helloScreen","nameScreen","welcomeScreen","emailScreen","passwordScreen",
-    "confirmEmailScreen","signInEmailScreen","signInPasswordScreen","pinSetupScreen",
+    "signInEmailScreen","signInPasswordScreen","pinSetupScreen",
     "pinUnlockScreen","dashboardScreen"
   ];
   const $ = id => document.getElementById(id);
@@ -327,15 +321,18 @@
       email:newEmail,password:newPassword,options:{data:{name:newName}}
     });
     if(error){ $("passwordError").textContent = error.message; return; }
+    if(!data.session){
+      $("passwordError").textContent = "Email confirmation is still enabled in Supabase. Turn off Confirm email in Authentication settings.";
+      return;
+    }
     $("passwordError").textContent = "";
-    if(!data.session){ show("confirmEmailScreen"); return; }
-    session = data.session; await getProfile();
-    show("pinSetupScreen"); focusSoon(document.querySelector(".setup-pin"));
+    session = data.session;
+    await getProfile();
+    show("pinSetupScreen");
+    focusSoon(document.querySelector(".setup-pin"));
   };
 
   $("showSignIn").onclick = () => { show("signInEmailScreen"); focusSoon($("signInEmail")); };
-  $("confirmToSignIn").onclick = () => { $("signInEmail").value = newEmail; show("signInEmailScreen"); focusSoon($("signInEmail")); };
-
   $("signInEmail").onkeydown = e => {
     if(e.key !== "Enter") return;
     if(!validEmail($("signInEmail").value.trim())) return $("signInEmailError").textContent = "Enter a valid email.";
