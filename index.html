@@ -1,94 +1,697 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Minddrop — ADHD-friendly task capture and planning." />
-  <title>Minddrop</title>
-  <link rel="stylesheet" href="./styles.css" />
+  <title>Minddrop — Smart Entry Flow</title>
+  <style>
+    :root{
+      --bg:#f3ecdf;
+      --text:#3c302b;
+      --muted:#8d8176;
+      --accent:#b77e25;
+      --field:#fffaf3;
+      --field-text:#3c302b;
+      --field-placeholder:#8d8176;
+      --field-border:#e2d4c3;
+      --error:#a85b4b;
+      --panel:#fffaf2;
+      --panel2:#f6eee2;
+      --shadow:0 18px 45px rgba(84,62,43,.10);
+    }
+
+    html[data-theme="dark"]{
+      --bg:#141516;
+      --text:#f0e7d9;
+      --muted:#918b83;
+      --accent:#d9aa3d;
+      --field:#fffaf3;
+      --field-text:#3c302b;
+      --field-placeholder:#8d8176;
+      --field-border:#e2d4c3;
+      --error:#cf7463;
+      --panel:#1c1d1f;
+      --panel2:#232528;
+      --shadow:0 18px 45px rgba(0,0,0,.28);
+    }
+
+    *{box-sizing:border-box}
+
+    html,body{
+      margin:0;
+      min-height:100%;
+    }
+
+    body{
+      min-height:100vh;
+      background:
+        radial-gradient(circle at 50% 37%, rgba(217,170,61,.08), transparent 26%),
+        var(--bg);
+      color:var(--text);
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+      transition:background .25s ease,color .25s ease;
+    }
+
+    button,input{font:inherit}
+    button{cursor:pointer}
+
+    .page{
+      min-height:100vh;
+      display:grid;
+      grid-template-rows:auto 1fr;
+      padding:18px 7vw 36px;
+    }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font:27px Georgia,"Times New Roman",serif;
+    }
+
+    .brand svg{
+      width:27px;
+      height:35px;
+      color:var(--accent);
+    }
+
+    .top-actions{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .theme,.lock{
+      width:38px;
+      height:38px;
+      border:1px solid var(--field-border);
+      border-radius:12px;
+      background:transparent;
+      color:var(--muted);
+    }
+
+    .theme:hover,.lock:hover{
+      color:var(--accent);
+      border-color:var(--accent);
+    }
+
+    .hidden{display:none!important}
+
+    .stage{
+      position:relative;
+      display:grid;
+      place-items:center;
+    }
+
+    .screen{
+      position:absolute;
+      width:min(720px,92vw);
+      text-align:center;
+      opacity:0;
+      transform:translateY(12px);
+      pointer-events:none;
+      transition:opacity .5s ease,transform .5s ease;
+    }
+
+    .screen.active{
+      opacity:1;
+      transform:none;
+      pointer-events:auto;
+    }
+
+    h1{
+      margin:0;
+      font:500 clamp(48px,8vw,86px)/1 Georgia,"Times New Roman",serif;
+      letter-spacing:-.05em;
+    }
+
+    .question{
+      margin:0;
+      color:var(--text);
+      font:500 clamp(42px,7vw,74px)/1.08 Georgia,"Times New Roman",serif;
+      letter-spacing:-.045em;
+    }
+
+    .subquestion{
+      margin:16px 0 0;
+      color:var(--muted);
+      font-size:17px;
+      line-height:1.5;
+    }
+
+    .answer-card{
+      width:min(500px,100%);
+      margin:34px auto 0;
+      background:var(--field);
+      border:1px solid var(--field-border);
+      border-radius:999px;
+      box-shadow:
+        0 16px 40px rgba(84,62,43,.09),
+        inset 0 1px 0 rgba(255,255,255,.65);
+      padding:5px;
+      transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease;
+    }
+
+    .answer-card:focus-within{
+      border-color:var(--accent);
+      box-shadow:
+        0 0 0 4px rgba(183,126,37,.10),
+        0 18px 46px rgba(84,62,43,.12),
+        inset 0 1px 0 rgba(255,255,255,.7);
+      transform:translateY(-1px);
+    }
+
+    .answer-card input{
+      width:100%;
+      min-height:58px;
+      border:0;
+      outline:0;
+      border-radius:999px;
+      background:transparent;
+      color:var(--field-text);
+      font-size:18px;
+      text-align:center;
+      padding:0 26px;
+    }
+
+    .answer-card input::placeholder{color:var(--field-placeholder)}
+
+    .motivation{
+      margin-top:16px;
+      color:var(--accent);
+      font:12px/1.55 "Courier New",monospace;
+    }
+
+    .error{
+      min-height:18px;
+      margin-top:9px;
+      color:var(--error);
+      font-size:11px;
+    }
+
+    .hello-word{
+      display:inline-flex;
+      align-items:flex-end;
+      font:500 clamp(82px,14vw,150px)/1 Georgia,"Times New Roman",serif;
+      letter-spacing:-.075em;
+      color:var(--text);
+    }
+
+    .hello-letter{
+      display:inline-block;
+      opacity:0;
+      transform:translateY(26px) scale(.96);
+      filter:blur(7px);
+      animation:letterIn .72s cubic-bezier(.2,.75,.2,1) forwards;
+    }
+
+    .hello-letter:nth-child(1){animation-delay:.10s}
+    .hello-letter:nth-child(2){animation-delay:.22s}
+    .hello-letter:nth-child(3){animation-delay:.34s}
+    .hello-letter:nth-child(4){
+      animation-delay:.56s;
+      color:var(--accent);
+      transform:translateX(-10px) translateY(26px) scale(.96);
+    }
+
+    .hello-glow{
+      position:absolute;
+      left:50%;
+      top:50%;
+      width:220px;
+      height:120px;
+      transform:translate(-50%,-50%);
+      border-radius:50%;
+      background:rgba(217,170,61,.12);
+      filter:blur(45px);
+      opacity:0;
+      animation:glowIn 1.5s ease forwards .2s;
+      pointer-events:none;
+    }
+
+    @keyframes letterIn{
+      to{opacity:1;transform:none;filter:blur(0)}
+    }
+
+    @keyframes glowIn{
+      0%{opacity:0;transform:translate(-50%,-50%) scale(.7)}
+      60%{opacity:1}
+      100%{opacity:.45;transform:translate(-50%,-50%) scale(1.15)}
+    }
+
+    .welcome-copy{
+      max-width:500px;
+      margin:18px auto 0;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.65;
+    }
+
+    .pin-card{
+      width:min(340px,100%);
+      margin:34px auto 0;
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:10px;
+    }
+
+    .pin-card input{
+      width:100%;
+      border:1px solid var(--field-border);
+      border-radius:18px;
+      background:var(--field);
+      color:var(--field-text);
+      box-shadow:var(--shadow);
+      padding:15px 0;
+      text-align:center;
+      font-size:24px;
+      outline:0;
+    }
+
+    .pin-card input:focus{
+      border-color:var(--accent);
+      box-shadow:0 0 0 4px rgba(183,126,37,.10),var(--shadow);
+    }
+
+    .dashboard{
+      width:min(900px,100%);
+      margin:90px auto 0;
+      text-align:center;
+    }
+
+    .dashboard h1{
+      font-size:clamp(42px,7vw,70px);
+    }
+
+    .dashboard-copy{
+      margin:12px 0 28px;
+      color:var(--accent);
+      font:12px "Courier New",monospace;
+    }
+
+    .capture{
+      background:var(--panel);
+      border:1px solid var(--field-border);
+      border-radius:18px;
+      box-shadow:var(--shadow);
+      padding:6px;
+      margin-bottom:16px;
+    }
+
+    .capture input{
+      width:100%;
+      min-height:58px;
+      border:0;
+      outline:0;
+      border-radius:15px;
+      background:transparent;
+      color:var(--text);
+      padding:0 18px;
+      font-size:16px;
+    }
+
+    .routine-panel{
+      background:var(--panel);
+      border:1px solid var(--field-border);
+      border-radius:20px;
+      box-shadow:var(--shadow);
+      padding:22px;
+      text-align:left;
+    }
+
+    .routine-panel h2{
+      margin:0 0 14px;
+      font:500 26px Georgia,serif;
+    }
+
+    .routine-item{
+      display:grid;
+      grid-template-columns:80px 1fr auto;
+      gap:10px;
+      align-items:center;
+      background:var(--panel2);
+      border:1px solid var(--field-border);
+      border-radius:12px;
+      padding:12px;
+      margin-bottom:9px;
+    }
+
+    .time{
+      color:var(--accent);
+      font-size:12px;
+      font-weight:800;
+    }
+
+    .task{
+      font-size:13px;
+      font-weight:700;
+    }
+
+    .check{
+      width:18px;
+      height:18px;
+      border:1px solid var(--muted);
+      border-radius:6px;
+      background:transparent;
+    }
+
+    .reset{
+      margin-top:18px;
+      border:0;
+      background:transparent;
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    @media(max-width:600px){
+      .page{padding:16px 14px 28px}
+      .brand{font-size:24px}
+      .answer-card input{font-size:17px;min-height:56px}
+      .subquestion{font-size:15px}
+      .dashboard{margin-top:70px}
+    }
+  </style>
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="#" aria-label="Minddrop home">
-      <svg viewBox="0 0 32 40" fill="none" aria-hidden="true">
-        <path d="M16 2C15 9 7 14 7 24c0 7 4 12 9 12s9-5 9-12C25 14 17 9 16 2Z" stroke="currentColor" stroke-width="2.2"/>
-        <path d="M12 28c1.5 2.5 5.5 3.5 8 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-      </svg>
-      <span>minddrop</span>
-    </a>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">
+        <svg viewBox="0 0 32 40" fill="none" aria-hidden="true">
+          <path d="M16 2C15 9 7 14 7 24c0 7 4 12 9 12s9-5 9-12C25 14 17 9 16 2Z" stroke="currentColor" stroke-width="2.2"/>
+          <path d="M12 28c1.5 2.5 5.5 3.5 8 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        <span>minddrop</span>
+      </div>
 
-    <div class="top-actions">
-      <span id="syncState" class="sync-state">local mode</span>
-      <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">☼</button>
-      <button id="authButton" class="outline-btn">sign in</button>
-    </div>
-  </header>
+      <div class="top-actions">
+        <button id="lockButton" class="lock hidden" aria-label="Lock Minddrop">⌁</button>
+        <button id="themeToggle" class="theme" aria-label="Switch theme">☾</button>
+      </div>
+    </header>
 
-  <main>
-    <section class="hero">
-      <h1>type what you need to remember</h1>
-      <p>press enter to save. minddrop puts it where it belongs.</p>
-
-      <div class="capture">
-        <textarea id="brainDump" autofocus placeholder="email Sam tomorrow at 10
-buy printer ink next week
-every Friday at 4 submit weekly report"></textarea>
-        <div class="capture-foot">
-          <span>Enter = save · Shift + Enter = new line</span>
-          <span id="smartPreview" class="accent"></span>
+    <main class="stage">
+      <section id="helloScreen" class="screen">
+        <div class="hello-glow"></div>
+        <div class="hello-word" aria-label="heyy">
+          <span class="hello-letter">h</span>
+          <span class="hello-letter">e</span>
+          <span class="hello-letter">y</span>
+          <span class="hello-letter">y</span>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section class="board" aria-label="Organized tasks">
-      <article class="column">
-        <div class="column-head"><h2>today</h2><span id="count-today">0</span></div>
-        <div id="list-today" class="task-list"></div>
-      </article>
-      <article class="column">
-        <div class="column-head"><h2>follow up</h2><span id="count-followup">0</span></div>
-        <div id="list-followup" class="task-list"></div>
-      </article>
-      <article class="column">
-        <div class="column-head"><h2>schedule</h2><span id="count-schedule">0</span></div>
-        <div id="list-schedule" class="task-list"></div>
-      </article>
-      <article class="column">
-        <div class="column-head"><h2>later</h2><span id="count-later">0</span></div>
-        <div id="list-later" class="task-list"></div>
-      </article>
-    </section>
-  </main>
+      <section id="nameScreen" class="screen">
+        <h1 class="question">what’s your name?</h1>
 
-  <dialog id="authDialog">
-    <form method="dialog" class="auth-card" id="authForm">
-      <div class="dialog-head">
-        <div>
-          <h2>sync Minddrop</h2>
-          <p>Sign in to keep your tasks across browsers.</p>
+        <div class="answer-card">
+          <input id="nameInput" type="text" placeholder="Enter your name" autocomplete="name" />
         </div>
-        <button class="close-btn" value="cancel" aria-label="Close">×</button>
-      </div>
 
-      <label>
-        Email
-        <input id="email" type="email" autocomplete="email" required />
-      </label>
-      <label>
-        Password
-        <input id="password" type="password" autocomplete="current-password" minlength="6" required />
-      </label>
+        <div class="motivation">One small step is enough for now.</div>
+        <div id="nameError" class="error"></div>
+      </section>
 
-      <div class="auth-actions">
-        <button type="button" id="signInButton" class="primary-btn">sign in</button>
-        <button type="button" id="signUpButton" class="outline-btn">create account</button>
-      </div>
-      <p id="authMessage" class="message" role="status"></p>
-    </form>
-  </dialog>
+      <section id="welcomeScreen" class="screen">
+        <h1 id="welcomeTitle">oh, you’re new</h1>
+        <p class="welcome-copy">
+          Welcome to Minddrop — a quiet place where your mind can rest.
+        </p>
+      </section>
 
-  <div id="toast" class="toast" role="status"></div>
+      <section id="emailScreen" class="screen">
+        <h1>let’s keep it synced</h1>
+        <p class="subquestion">what’s your email?</p>
 
-  <script type="module" src="./app.js"></script>
+        <div class="answer-card">
+          <input id="emailInput" type="email" placeholder="you@example.com" autocomplete="email" />
+        </div>
+
+        <div class="motivation">You don’t have to remember everything yourself.</div>
+        <div id="emailError" class="error"></div>
+      </section>
+
+      <section id="passwordScreen" class="screen">
+        <h1>create a password</h1>
+
+        <div class="answer-card">
+          <input id="passwordInput" type="password" placeholder="At least 6 characters" autocomplete="new-password" />
+        </div>
+
+        <div class="motivation">Set it once, then let Minddrop do the remembering.</div>
+        <div id="passwordError" class="error"></div>
+      </section>
+
+      <section id="pinSetupScreen" class="screen">
+        <h1>set a PIN</h1>
+        <p class="subquestion">for quick daily access</p>
+
+        <div class="pin-card">
+          <input class="setup-pin" inputmode="numeric" maxlength="1" aria-label="PIN digit 1" />
+          <input class="setup-pin" inputmode="numeric" maxlength="1" aria-label="PIN digit 2" />
+          <input class="setup-pin" inputmode="numeric" maxlength="1" aria-label="PIN digit 3" />
+          <input class="setup-pin" inputmode="numeric" maxlength="1" aria-label="PIN digit 4" />
+        </div>
+
+        <div class="motivation">Future-you will thank you for making this easy.</div>
+      </section>
+
+      <section id="pinUnlockScreen" class="screen">
+        <h1 id="pinGreeting">welcome back</h1>
+        <p class="subquestion">enter your PIN</p>
+
+        <div class="pin-card">
+          <input class="unlock-pin" inputmode="numeric" maxlength="1" aria-label="PIN digit 1" />
+          <input class="unlock-pin" inputmode="numeric" maxlength="1" aria-label="PIN digit 2" />
+          <input class="unlock-pin" inputmode="numeric" maxlength="1" aria-label="PIN digit 3" />
+          <input class="unlock-pin" inputmode="numeric" maxlength="1" aria-label="PIN digit 4" />
+        </div>
+
+        <div class="motivation">Just one quick step, then you’re in.</div>
+        <div id="unlockError" class="error"></div>
+      </section>
+
+      <section id="dashboardScreen" class="screen">
+        <div class="dashboard">
+          <h1 id="dashboardGreeting">hey</h1>
+          <div class="dashboard-copy">You only need to do the next small thing.</div>
+
+          <div class="capture">
+            <input placeholder="Add a task or reminder…" />
+          </div>
+
+          <div class="routine-panel">
+            <h2>today’s routine</h2>
+
+            <div class="routine-item">
+              <div class="time">9:00 AM</div>
+              <div class="task">Check urgent messages</div>
+              <button class="check"></button>
+            </div>
+
+            <div class="routine-item">
+              <div class="time">9:15 AM</div>
+              <div class="task">Review today’s priorities</div>
+              <button class="check"></button>
+            </div>
+
+            <div class="routine-item">
+              <div class="time">4:45 PM</div>
+              <div class="task">End-of-shift review</div>
+              <button class="check"></button>
+            </div>
+
+            <button id="resetSetup" class="reset">reset prototype user</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const profileKey = "minddrop-prototype-profile";
+    const unlockedKey = "minddrop-prototype-unlocked";
+
+    const screens = [
+      "helloScreen",
+      "nameScreen",
+      "welcomeScreen",
+      "emailScreen",
+      "passwordScreen",
+      "pinSetupScreen",
+      "pinUnlockScreen",
+      "dashboardScreen"
+    ];
+
+    let userName = "";
+    let profile = JSON.parse(localStorage.getItem(profileKey) || "null");
+
+    function showScreen(id){
+      screens.forEach(screenId => {
+        document.getElementById(screenId).classList.toggle("active", screenId === id);
+      });
+    }
+
+    function focusSoon(element){
+      setTimeout(() => element.focus(), 420);
+    }
+
+    function openDashboard(){
+      dashboardGreeting.textContent = `hey, ${profile.name}`;
+      lockButton.classList.remove("hidden");
+      sessionStorage.setItem(unlockedKey, "yes");
+      showScreen("dashboardScreen");
+    }
+
+    function begin(){
+      if(profile){
+        pinGreeting.textContent = `welcome back, ${profile.name}`;
+
+        if(sessionStorage.getItem(unlockedKey) === "yes"){
+          openDashboard();
+        }else{
+          showScreen("pinUnlockScreen");
+          focusSoon(document.querySelector(".unlock-pin"));
+        }
+
+        return;
+      }
+
+      showScreen("helloScreen");
+
+      setTimeout(() => {
+        showScreen("nameScreen");
+        focusSoon(nameInput);
+      }, 2100);
+    }
+
+    nameInput.addEventListener("keydown", event => {
+      if(event.key !== "Enter") return;
+
+      userName = nameInput.value.trim();
+
+      if(!userName){
+        nameError.textContent = "Enter your name.";
+        return;
+      }
+
+      nameError.textContent = "";
+      welcomeTitle.textContent = `oh, ${userName} — you’re new`;
+      showScreen("welcomeScreen");
+
+      setTimeout(() => {
+        showScreen("emailScreen");
+        focusSoon(emailInput);
+      }, 1800);
+    });
+
+    emailInput.addEventListener("keydown", event => {
+      if(event.key !== "Enter") return;
+
+      const email = emailInput.value.trim();
+
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+        emailError.textContent = "Enter a valid email.";
+        return;
+      }
+
+      emailError.textContent = "";
+      showScreen("passwordScreen");
+      focusSoon(passwordInput);
+    });
+
+    passwordInput.addEventListener("keydown", event => {
+      if(event.key !== "Enter") return;
+
+      if(passwordInput.value.length < 6){
+        passwordError.textContent = "Use at least 6 characters.";
+        return;
+      }
+
+      passwordError.textContent = "";
+      showScreen("pinSetupScreen");
+      focusSoon(document.querySelector(".setup-pin"));
+    });
+
+    function connectPinInputs(selector,onComplete){
+      document.querySelectorAll(selector).forEach((input,index,list) => {
+        input.addEventListener("input", () => {
+          input.value = input.value.replace(/\D/g,"");
+
+          if(input.value && list[index + 1]){
+            list[index + 1].focus();
+          }
+
+          if([...list].every(item => item.value)){
+            onComplete([...list].map(item => item.value).join(""));
+          }
+        });
+
+        input.addEventListener("keydown", event => {
+          if(event.key === "Backspace" && !input.value && list[index - 1]){
+            list[index - 1].focus();
+          }
+        });
+      });
+    }
+
+    connectPinInputs(".setup-pin", pin => {
+      profile = {
+        name:userName,
+        email:emailInput.value.trim(),
+        pin
+      };
+
+      localStorage.setItem(profileKey, JSON.stringify(profile));
+      openDashboard();
+    });
+
+    connectPinInputs(".unlock-pin", pin => {
+      if(pin !== profile.pin){
+        unlockError.textContent = "That PIN is not correct.";
+        document.querySelectorAll(".unlock-pin").forEach(input => input.value = "");
+        focusSoon(document.querySelector(".unlock-pin"));
+        return;
+      }
+
+      unlockError.textContent = "";
+      openDashboard();
+    });
+
+    lockButton.addEventListener("click", () => {
+      sessionStorage.removeItem(unlockedKey);
+      lockButton.classList.add("hidden");
+      document.querySelectorAll(".unlock-pin").forEach(input => input.value = "");
+      pinGreeting.textContent = `welcome back, ${profile.name}`;
+      showScreen("pinUnlockScreen");
+      focusSoon(document.querySelector(".unlock-pin"));
+    });
+
+    resetSetup.addEventListener("click", () => {
+      localStorage.removeItem(profileKey);
+      sessionStorage.removeItem(unlockedKey);
+      location.reload();
+    });
+
+    function applyTheme(theme){
+      document.documentElement.dataset.theme = theme;
+      themeToggle.textContent = theme === "light" ? "☾" : "☼";
+      localStorage.setItem("minddrop-minimal-theme", theme);
+    }
+
+    themeToggle.addEventListener("click", () => {
+      applyTheme(
+        document.documentElement.dataset.theme === "light" ? "dark" : "light"
+      );
+    });
+
+    applyTheme(localStorage.getItem("minddrop-minimal-theme") || "light");
+    begin();
+  </script>
 </body>
 </html>
