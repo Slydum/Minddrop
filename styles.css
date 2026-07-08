@@ -27,6 +27,30 @@ button,input,select{font:inherit}button{cursor:pointer}.hidden{display:none!impo
   width:38px;height:38px;border:1px solid var(--field-border);border-radius:12px;
   background:transparent;color:var(--muted)
 }
+.calendar-icon-button {
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+}
+
+.calendar-icon-button svg {
+  width: 17px;
+  height: 17px;
+}
+.calendar-back-nav {
+  width: min(1180px, 100%);
+  margin: 24px auto 0;
+}
+
+.calendar-back-nav a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.calendar-back-nav a:hover {
+  color: var(--accent);
+}
 .icon-button:hover{color:var(--accent);border-color:var(--accent)}
 .sync-state{font:10px "Courier New",monospace;color:var(--muted)}
 .stage{position:relative;display:grid;place-items:center}
