@@ -595,16 +595,6 @@ $("lockButton").onclick = () => {
   location.href = "./index.html";
 };
 
-$("signOutButton").onclick = async () => {
-  sessionStorage.removeItem(
-    "minddrop-unlocked"
-  );
-
-  await supabase.auth.signOut();
-
-  location.href = "./index.html";
-};
-
 const {
   data: {
     session: initialSession
