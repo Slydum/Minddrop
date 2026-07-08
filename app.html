@@ -583,6 +583,58 @@
       white-space: nowrap;
     }
 
+    .calendar-day-events {
+  display: grid;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.calendar-event {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+
+  min-width: 0;
+  padding: 6px 7px;
+
+  overflow: hidden;
+
+  border-radius: 7px;
+
+  font-size: 10px;
+  line-height: 1.2;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-event span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-event.routine {
+  border-left: 3px solid var(--accent);
+  background: rgba(183, 126, 37, 0.12);
+}
+
+.calendar-event.task {
+  border-left: 3px solid var(--text);
+  background: var(--panel2);
+}
+
+.calendar-event-time {
+  flex-shrink: 0;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.calendar-more {
+  padding-left: 6px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
     .calendar-unscheduled {
       margin-top: 30px;
       padding-top: 22px;

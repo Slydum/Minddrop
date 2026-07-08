@@ -25,6 +25,9 @@ let tasks = [];
 let activeRoutineFrequency = "daily";
 let realtimeChannel = null;
 
+let calendarDate = new Date();
+calendarDate.setDate(1);
+
 function escapeHtml(value) {
   return String(value).replace(
     /[&<>"']/g,
@@ -102,7 +105,8 @@ async function loadData() {
   tasks = taskResult.data || [];
 
   renderRoutines();
-  renderTasks();
+renderTasks();
+renderCalendar();
 }
 
 function realtimeStart() {
@@ -340,6 +344,291 @@ function renderTasks() {
       };
     });
 }
+
+function localDateKey(date) {
+  const year = date.getFullYear();
+
+  const month = String(
+    date.getMonth() + 1
+  ).padStart(2, "0");
+
+  const day = String(
+    date.getDate()
+  ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function routineMatchesDate(routine, date) {
+  if (routine.frequency === "daily") {
+    return true;
+  }
+
+  if (routine.frequency === "weekly") {
+    return Number(routine.weekday) === date.getDay();
+  }
+
+  if (routine.frequency === "monthly") {
+    return Number(routine.monthday) === date.getDate();
+  }
+
+  return false;
+}
+
+function taskDateKey(task) {
+  /*
+    The calendar first checks for due_date.
+
+    If your table uses scheduled_date instead,
+    it will check that too.
+  */
+  return (
+    task.due_date ||
+    task.scheduled_date ||
+    null
+  );
+}
+
+function getCalendarItems(date) {
+  const dateKey = localDateKey(date);
+
+  const routineItems = routines
+    .filter(routine => routineMatchesDate(routine, date))
+    .map(routine => ({
+      type: "routine",
+      title: routine.title,
+      time: routine.time_of_day
+        ? formatTime(routine.time_of_day)
+        : ""
+    }));
+
+  const taskItems = tasks
+    .filter(task => {
+      return (
+        !task.completed &&
+        taskDateKey(task) === dateKey
+      );
+    })
+    .map(task => ({
+      type: "task",
+      title: task.title,
+      time: ""
+    }));
+
+  return [
+    ...routineItems,
+    ...taskItems
+  ];
+}
+
+function renderCalendar() {
+  const grid = $("calendarGrid");
+  const monthTitle = $("calendarMonthTitle");
+
+  if (!grid || !monthTitle) {
+    return;
+  }
+
+  const year = calendarDate.getFullYear();
+  const month = calendarDate.getMonth();
+
+  monthTitle.textContent =
+    calendarDate.toLocaleDateString([], {
+      month: "long",
+      year: "numeric"
+    });
+
+  const firstDayOfMonth =
+    new Date(year, month, 1);
+
+  const firstVisibleDate =
+    new Date(year, month, 1 - firstDayOfMonth.getDay());
+
+  const todayKey =
+    localDateKey(new Date());
+
+  let calendarHtml = "";
+
+  for (let index = 0; index < 42; index++) {
+    const currentDate =
+      new Date(firstVisibleDate);
+
+    currentDate.setDate(
+      firstVisibleDate.getDate() + index
+    );
+
+    const currentKey =
+      localDateKey(currentDate);
+
+    const isOutsideMonth =
+      currentDate.getMonth() !== month;
+
+    const isToday =
+      currentKey === todayKey;
+
+    const items =
+      getCalendarItems(currentDate);
+
+    const visibleItems =
+      items.slice(0, 3);
+
+    const remainingCount =
+      items.length - visibleItems.length;
+
+    const eventHtml =
+      visibleItems.map(item => `
+        <div
+          class="calendar-event ${item.type}"
+          title="${escapeHtml(item.title)}"
+        >
+          ${
+            item.time
+              ? `<span class="calendar-event-time">
+                   ${escapeHtml(item.time)}
+                 </span>`
+              : ""
+          }
+
+          <span>
+            ${escapeHtml(item.title)}
+          </span>
+        </div>
+      `).join("");
+
+    const moreHtml =
+      remainingCount > 0
+        ? `
+          <div class="calendar-more">
+            +${remainingCount} more
+          </div>
+        `
+        : "";
+
+    calendarHtml += `
+      <div
+        class="
+          calendar-day
+          ${isOutsideMonth ? "outside-month" : ""}
+          ${isToday ? "today" : ""}
+        "
+        data-date="${currentKey}"
+      >
+        <div class="calendar-day-number">
+          ${currentDate.getDate()}
+        </div>
+
+        <div class="calendar-day-events">
+          ${eventHtml}
+          ${moreHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  grid.innerHTML = calendarHtml;
+
+  renderUnscheduledTasks();
+}
+
+function renderUnscheduledTasks() {
+  const container =
+    $("unscheduledTaskList");
+
+  if (!container) {
+    return;
+  }
+
+  const unscheduledTasks =
+    tasks.filter(task => {
+      return (
+        !task.completed &&
+        !taskDateKey(task)
+      );
+    });
+
+  if (!unscheduledTasks.length) {
+    container.innerHTML = `
+      <div class="empty">
+        No unscheduled tasks.
+      </div>
+    `;
+
+    return;
+  }
+
+  container.innerHTML =
+    unscheduledTasks.map(task => `
+      <div class="task-item">
+        <button
+          class="check"
+          data-unscheduled-task="${task.id}"
+          aria-label="Complete task"
+        ></button>
+
+        <div>
+          <div class="task-title">
+            ${escapeHtml(task.title)}
+          </div>
+
+          <div class="task-meta">
+            no date assigned
+          </div>
+        </div>
+
+        <button
+          class="delete"
+          data-unscheduled-delete="${task.id}"
+          aria-label="Delete task"
+        >
+          ×
+        </button>
+      </div>
+    `).join("");
+
+  document
+    .querySelectorAll("[data-unscheduled-task]")
+    .forEach(button => {
+      button.onclick = () => {
+        toggleTask(
+          button.dataset.unscheduledTask,
+          false
+        );
+      };
+    });
+
+  document
+    .querySelectorAll("[data-unscheduled-delete]")
+    .forEach(button => {
+      button.onclick = () => {
+        deleteTask(
+          button.dataset.unscheduledDelete
+        );
+      };
+    });
+}
+
+function moveCalendarMonth(amount) {
+  calendarDate.setMonth(
+    calendarDate.getMonth() + amount
+  );
+
+  renderCalendar();
+}
+
+$("calendarPrevious").onclick = () => {
+  moveCalendarMonth(-1);
+};
+
+$("calendarNext").onclick = () => {
+  moveCalendarMonth(1);
+};
+
+$("calendarToday").onclick = () => {
+  calendarDate = new Date();
+  calendarDate.setDate(1);
+
+  renderCalendar();
+};
 
 async function toggleRoutine(id, done) {
   const routine = routines.find(
