@@ -7,6 +7,8 @@ import {
   SUPABASE_PUBLISHABLE_KEY
 } from "./config.js";
 
+import { ICON_MOON, ICON_SUN } from "./icons.js";
+
 const supabase = createClient(
   SUPABASE_URL,
   SUPABASE_PUBLISHABLE_KEY
@@ -20,6 +22,7 @@ let routines = [];
 let tasks = [];
 let calendarDate = new Date();
 let realtimeChannel = null;
+let dayDialogDateKey = null;
 
 calendarDate.setDate(1);
 renderCalendar();
@@ -56,10 +59,10 @@ function applyTheme(theme) {
   document.documentElement.dataset.theme =
     theme;
 
-  $("themeToggle").textContent =
+  $("themeToggle").innerHTML =
     theme === "light"
-      ? "☾"
-      : "☼";
+      ? ICON_MOON
+      : ICON_SUN;
 
   localStorage.setItem(
     "minddrop-theme",
@@ -135,6 +138,40 @@ function routineMatchesDate(
   return false;
 }
 
+function eventsForDate(date) {
+  const dateKey = localDateKey(date);
+
+  const routineEvents =
+    routines
+      .filter(routine =>
+        routineMatchesDate(
+          routine,
+          date
+        )
+      )
+      .map(routine => ({
+        type: "routine",
+        title: routine.title,
+        time: formatTime(
+          routine.time_of_day
+        )
+      }));
+
+  const taskEvents =
+    tasks
+      .filter(task =>
+        !task.completed &&
+        task.due_date === dateKey
+      )
+      .map(task => ({
+        type: "task",
+        title: task.title,
+        time: ""
+      }));
+
+  return [...routineEvents, ...taskEvents];
+}
+
 async function loadData() {
   const [
     routineResult,
@@ -172,6 +209,10 @@ async function loadData() {
 
   renderCalendar();
   renderUnscheduledTasks();
+
+  if (dayDialogDateKey) {
+    renderDayDialogEvents(dayDialogDateKey);
+  }
 }
 
 function realtimeStart() {
@@ -277,38 +318,8 @@ function renderCalendar() {
     const today =
       dateKey === todayKey;
 
-    const routineEvents =
-      routines
-        .filter(routine =>
-          routineMatchesDate(
-            routine,
-            currentDate
-          )
-        )
-        .map(routine => ({
-          type: "routine",
-          title: routine.title,
-          time: formatTime(
-            routine.time_of_day
-          )
-        }));
-
-    const taskEvents =
-      tasks
-        .filter(task =>
-          !task.completed &&
-          task.due_date === dateKey
-        )
-        .map(task => ({
-          type: "task",
-          title: task.title,
-          time: ""
-        }));
-
-    const events = [
-      ...routineEvents,
-      ...taskEvents
-    ];
+    const events =
+      eventsForDate(currentDate);
 
     const visible =
       events.slice(0, 3);
@@ -426,24 +437,139 @@ function renderUnscheduledTasks() {
       "[data-delete]"
     )
     .forEach(button => {
-      button.onclick =
-        async () => {
-          const {
-            error
-          } = await supabase
-            .from("tasks")
-            .delete()
-            .eq(
-              "id",
-              button.dataset.delete
-            );
-
-          if (error) {
-            alert(error.message);
-          }
-        };
+      button.onclick = () => {
+        deleteTask(
+          button.dataset.delete
+        );
+      };
     });
 }
+
+async function deleteTask(id) {
+  const task =
+    tasks.find(item => item.id === id);
+
+  if (!task) {
+    return;
+  }
+
+  if (!confirm(`Delete "${task.title}"? This can't be undone.`)) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from("tasks")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    alert(error.message);
+  }
+}
+
+function formatDialogDate(dateKey) {
+  const date = new Date(`${dateKey}T00:00:00`);
+
+  return date.toLocaleDateString(
+    [],
+    {
+      weekday: "long",
+      month: "long",
+      day: "numeric"
+    }
+  );
+}
+
+function renderDayDialogEvents(dateKey) {
+  const date = new Date(`${dateKey}T00:00:00`);
+  const events = eventsForDate(date);
+
+  if (!events.length) {
+    $("dayDialogEvents").innerHTML = `
+      <div class="day-dialog-event">
+        <span class="task-meta">Nothing scheduled for this day.</span>
+      </div>
+    `;
+
+    return;
+  }
+
+  $("dayDialogEvents").innerHTML =
+    events.map(event => `
+      <div class="day-dialog-event">
+        <span>${escapeHtml(event.title)}</span>
+        ${
+          event.time
+            ? `<span class="day-dialog-event-time">${escapeHtml(event.time)}</span>`
+            : `<span class="task-meta">${event.type === "routine" ? "routine" : "task"}</span>`
+        }
+      </div>
+    `).join("");
+}
+
+function openDayDialog(dateKey) {
+  dayDialogDateKey = dateKey;
+
+  $("dayDialogTitle").textContent =
+    formatDialogDate(dateKey);
+
+  renderDayDialogEvents(dateKey);
+
+  $("dayTaskInput").value = "";
+  $("dayDialogError").textContent = "";
+
+  $("dayDialog").showModal();
+
+  setTimeout(() => $("dayTaskInput").focus(), 150);
+}
+
+$("calendarGrid").addEventListener(
+  "click",
+  event => {
+    const dayEl =
+      event.target.closest(".calendar-day");
+
+    if (!dayEl) {
+      return;
+    }
+
+    openDayDialog(dayEl.dataset.date);
+  }
+);
+
+$("closeDayDialog").onclick = () => {
+  $("dayDialog").close();
+};
+
+$("dayDialog").addEventListener("close", () => {
+  dayDialogDateKey = null;
+});
+
+$("dayTaskForm").onsubmit = async event => {
+  event.preventDefault();
+
+  const title = $("dayTaskInput").value.trim();
+
+  if (!title) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from("tasks")
+    .insert({
+      user_id: session.user.id,
+      title,
+      due_date: dayDialogDateKey
+    });
+
+  if (error) {
+    $("dayDialogError").textContent = error.message;
+    return;
+  }
+
+  $("dayTaskInput").value = "";
+  $("dayDialogError").textContent = "";
+};
 
 $("calendarPrevious").onclick =
   () => {

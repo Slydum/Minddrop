@@ -7,6 +7,8 @@ import {
   SUPABASE_PUBLISHABLE_KEY
 } from "./config.js";
 
+import { ICON_MOON, ICON_SUN } from "./icons.js";
+
 const supabase = createClient(
   SUPABASE_URL,
   SUPABASE_PUBLISHABLE_KEY
@@ -28,6 +30,7 @@ let routines = [];
 let tasks = [];
 let activeRoutineFrequency = "daily";
 let realtimeChannel = null;
+let showCompleted = false;
 
 function escapeHtml(value) {
   return String(value).replace(
@@ -61,10 +64,10 @@ function applyTheme(theme) {
   document.documentElement.dataset.theme =
     theme;
 
-  $("themeToggle").textContent =
+  $("themeToggle").innerHTML =
     theme === "light"
-      ? "☾"
-      : "☼";
+      ? ICON_MOON
+      : ICON_SUN;
 
   localStorage.setItem(
     "minddrop-theme",
@@ -361,13 +364,73 @@ function renderRoutines() {
     });
 }
 
-function renderTasks() {
-  const visibleTasks =
-    tasks.filter(
-      task => !task.completed
-    );
+function taskRowHtml(task) {
+  const done = !!task.completed;
 
-  if (!visibleTasks.length) {
+  const metaParts = [
+    task.due_date
+      ? `scheduled ${escapeHtml(task.due_date)}`
+      : "captured task"
+  ];
+
+  if (task.category && task.category !== "today") {
+    metaParts.push(escapeHtml(task.category));
+  }
+
+  return `
+    <div class="task-item">
+      <button
+        class="check ${done ? "done" : ""}"
+        data-task="${task.id}"
+        data-done="${done}"
+        aria-label="${done ? "Mark task incomplete" : "Complete task"}"
+      ></button>
+
+      <div>
+        <div class="task-title-row">
+          ${task.priority === "must" ? '<span class="priority-dot" title="must-do"></span>' : ""}
+          <div
+            class="task-title"
+            style="${done ? "text-decoration:line-through;opacity:.55" : ""}"
+          >
+            ${escapeHtml(task.title)}
+          </div>
+        </div>
+
+        <div class="task-meta">
+          ${metaParts.join(" · ")}
+        </div>
+      </div>
+
+      <button
+        class="delete"
+        data-delete="${task.id}"
+        aria-label="Delete task"
+      >
+        ×
+      </button>
+    </div>
+  `;
+}
+
+function renderTasks() {
+  const activeTasks =
+    tasks.filter(task => !task.completed);
+
+  const completedTasks =
+    tasks.filter(task => task.completed);
+
+  $("toggleCompletedButton").textContent =
+    showCompleted
+      ? "hide completed"
+      : `show completed${completedTasks.length ? ` (${completedTasks.length})` : ""}`;
+
+  const rows = [
+    ...activeTasks,
+    ...(showCompleted ? completedTasks : [])
+  ];
+
+  if (!rows.length) {
     $("taskList").innerHTML = `
       <div class="empty">
         Nothing captured yet.
@@ -378,39 +441,7 @@ function renderTasks() {
   }
 
   $("taskList").innerHTML =
-    visibleTasks.map(task => `
-      <div class="task-item">
-        <button
-          class="check"
-          data-task="${task.id}"
-          aria-label="Complete task"
-        ></button>
-
-        <div>
-          <div class="task-title">
-            ${escapeHtml(task.title)}
-          </div>
-
-          <div class="task-meta">
-            ${
-              task.due_date
-                ? `scheduled ${escapeHtml(
-                    task.due_date
-                  )}`
-                : "captured task"
-            }
-          </div>
-        </div>
-
-        <button
-          class="delete"
-          data-delete="${task.id}"
-          aria-label="Delete task"
-        >
-          ×
-        </button>
-      </div>
-    `).join("");
+    rows.map(taskRowHtml).join("");
 
   document
     .querySelectorAll(
@@ -420,7 +451,7 @@ function renderTasks() {
       button.onclick = () => {
         toggleTask(
           button.dataset.task,
-          false
+          button.dataset.done === "true"
         );
       };
     });
@@ -437,6 +468,11 @@ function renderTasks() {
       };
     });
 }
+
+$("toggleCompletedButton").onclick = () => {
+  showCompleted = !showCompleted;
+  renderTasks();
+};
 
 function renderUpcoming() {
   const upcoming = [];
@@ -630,12 +666,23 @@ async function toggleTask(
 }
 
 async function deleteTask(id) {
+  const task =
+    tasks.find(item => item.id === id);
+
+  if (!task) {
+    return;
+  }
+
+  if (!confirm(`Delete "${task.title}"? This can't be undone.`)) {
+    return;
+  }
+
   const previousTasks =
     [...tasks];
 
   tasks =
     tasks.filter(
-      task => task.id !== id
+      item => item.id !== id
     );
 
   renderTasks();
@@ -681,7 +728,11 @@ $("taskInput").onkeydown =
       .insert({
         user_id:
           session.user.id,
-        title
+        title,
+        priority:
+          $("taskPriorityInput").value,
+        category:
+          $("taskCategoryInput").value
       });
 
     if (error) {

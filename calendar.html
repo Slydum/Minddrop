@@ -2,505 +2,9 @@
 <html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Minddrop — Calendar</title>
-
-  <style>
-    :root {
-      --bg: #f3ecdf;
-      --text: #3c302b;
-      --muted: #8d8176;
-      --accent: #b77e25;
-      --field-border: #e2d4c3;
-      --panel: #fffaf2;
-      --panel2: #f6eee2;
-      --error: #a85b4b;
-      --shadow: 0 18px 45px rgba(84, 62, 43, 0.1);
-    }
-
-    html[data-theme="dark"] {
-      --bg: #141516;
-      --text: #f0e7d9;
-      --muted: #918b83;
-      --accent: #d9aa3d;
-      --field-border: #3d3e41;
-      --panel: #1c1d1f;
-      --panel2: #232528;
-      --error: #cf7463;
-      --shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
-      margin: 0;
-      min-height: 100%;
-    }
-
-    body {
-      min-height: 100vh;
-
-      background:
-        radial-gradient(
-          circle at 50% 16%,
-          rgba(217, 170, 61, 0.08),
-          transparent 28%
-        ),
-        var(--bg);
-
-      color: var(--text);
-
-      font-family:
-        Inter,
-        ui-sans-serif,
-        system-ui,
-        -apple-system,
-        "Segoe UI",
-        sans-serif;
-    }
-
-    button {
-      cursor: pointer;
-      font: inherit;
-    }
-
-    .page {
-      min-height: 100vh;
-      padding: 18px 7vw 46px;
-    }
-
-    /* Header */
-
-    .topbar {
-      width: min(1180px, 100%);
-      margin: 0 auto;
-
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-
-      color: var(--text);
-      text-decoration: none;
-
-      font:
-        27px Georgia,
-        "Times New Roman",
-        serif;
-    }
-
-    .brand svg {
-      width: 27px;
-      height: 35px;
-      color: var(--accent);
-    }
-
-    .top-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .sync-state {
-      color: var(--muted);
-
-      font:
-        10px "Courier New",
-        monospace;
-    }
-
-    .icon-button {
-      width: 38px;
-      height: 38px;
-
-      display: grid;
-      place-items: center;
-
-      border: 1px solid var(--field-border);
-      border-radius: 12px;
-
-      background: transparent;
-      color: var(--muted);
-
-      text-decoration: none;
-    }
-
-    .icon-button:hover {
-      color: var(--accent);
-      border-color: var(--accent);
-    }
-
-    .home-icon-button svg {
-      width: 17px;
-      height: 17px;
-    }
-
-    .view-tabs {
-      display: flex;
-      gap: 4px;
-
-      padding: 4px;
-
-      border: 1px solid var(--field-border);
-      border-radius: 999px;
-
-      background: var(--panel2);
-    }
-
-    .view-tab {
-      padding: 8px 16px;
-
-      border-radius: 999px;
-
-      color: var(--muted);
-      text-decoration: none;
-
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-    }
-
-    .view-tab:hover {
-      color: var(--accent);
-    }
-
-    .view-tab.active {
-      background: var(--accent);
-      color: #171717;
-    }
-
-    /* Calendar */
-
-    .calendar-main {
-      width: min(1180px, 100%);
-      margin: 42px auto 0;
-    }
-
-    .calendar-panel {
-      padding: 28px;
-
-      border: 1px solid var(--field-border);
-      border-radius: 22px;
-
-      background: var(--panel);
-      box-shadow: var(--shadow);
-    }
-
-    .calendar-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 18px;
-
-      margin-bottom: 24px;
-    }
-
-    .calendar-header h1 {
-      margin: 0;
-
-      font:
-        500 38px Georgia,
-        "Times New Roman",
-        serif;
-    }
-
-    .calendar-header p {
-      margin: 7px 0 0;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .calendar-controls {
-      display: flex;
-      gap: 8px;
-    }
-
-    .calendar-controls button {
-      min-width: 40px;
-      height: 38px;
-
-      padding: 0 13px;
-
-      border: 1px solid var(--field-border);
-      border-radius: 10px;
-
-      background: transparent;
-      color: var(--muted);
-    }
-
-    .calendar-controls button:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-
-    .calendar-month-title {
-      margin: 0 0 18px;
-
-      text-align: center;
-
-      font:
-        500 26px Georgia,
-        "Times New Roman",
-        serif;
-    }
-
-    .calendar-weekdays,
-    .calendar-grid {
-      display: grid;
-      grid-template-columns:
-        repeat(
-          7,
-          minmax(0, 1fr)
-        );
-    }
-
-    .calendar-weekdays {
-      border-top: 1px solid var(--field-border);
-      border-left: 1px solid var(--field-border);
-    }
-
-    .calendar-weekdays span {
-      padding: 11px;
-
-      border-right: 1px solid var(--field-border);
-      border-bottom: 1px solid var(--field-border);
-
-      color: var(--muted);
-
-      text-align: center;
-      text-transform: uppercase;
-
-      font-size: 11px;
-      font-weight: 700;
-    }
-
-    .calendar-grid {
-      min-height: 680px;
-
-      grid-template-rows:
-        repeat(
-          6,
-          minmax(110px, 1fr)
-        );
-
-      border-left: 1px solid var(--field-border);
-    }
-
-    .calendar-day {
-      min-width: 0;
-      padding: 9px;
-
-      border-right: 1px solid var(--field-border);
-      border-bottom: 1px solid var(--field-border);
-
-      background: var(--panel);
-    }
-
-    .calendar-day.outside-month {
-      opacity: 0.4;
-    }
-
-    .calendar-day.today {
-      background:
-        rgba(183, 126, 37, 0.08);
-    }
-
-    .calendar-day-number {
-      width: 28px;
-      height: 28px;
-
-      display: inline-grid;
-      place-items: center;
-
-      border-radius: 50%;
-
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .calendar-day.today
-    .calendar-day-number {
-      background: var(--accent);
-      color: #171717;
-    }
-
-    .calendar-day-events {
-      display: grid;
-      gap: 5px;
-
-      margin-top: 6px;
-    }
-
-    .calendar-event {
-      min-width: 0;
-
-      display: flex;
-      align-items: center;
-      gap: 5px;
-
-      padding: 6px 7px;
-
-      overflow: hidden;
-
-      border-radius: 7px;
-      background: var(--panel2);
-
-      font-size: 10px;
-      line-height: 1.2;
-
-      white-space: nowrap;
-    }
-
-    .calendar-event.routine {
-      border-left:
-        3px solid var(--accent);
-
-      background:
-        rgba(183, 126, 37, 0.12);
-    }
-
-    .calendar-event.task {
-      border-left:
-        3px solid var(--text);
-    }
-
-    .calendar-event-time {
-      flex-shrink: 0;
-
-      color: var(--accent);
-      font-weight: 700;
-    }
-
-    .calendar-event-title {
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .calendar-more {
-      padding-left: 6px;
-
-      color: var(--muted);
-      font-size: 9px;
-    }
-
-    /* Unscheduled tasks */
-
-    .calendar-unscheduled {
-      margin-top: 28px;
-      padding-top: 20px;
-
-      border-top:
-        1px solid var(--field-border);
-    }
-
-    .calendar-unscheduled h2 {
-      margin: 0 0 14px;
-
-      font:
-        500 22px Georgia,
-        "Times New Roman",
-        serif;
-    }
-
-    .unscheduled-item {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      align-items: center;
-      gap: 10px;
-
-      margin-bottom: 8px;
-      padding: 11px 12px;
-
-      border: 1px solid var(--field-border);
-      border-radius: 11px;
-
-      background: var(--panel2);
-    }
-
-    .task-title {
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .task-meta {
-      margin-top: 3px;
-
-      color: var(--muted);
-      font-size: 10px;
-    }
-
-    .delete {
-      border: 0;
-
-      background: transparent;
-      color: var(--muted);
-
-      font-size: 17px;
-    }
-
-    .delete:hover {
-      color: var(--error);
-    }
-
-    .empty {
-      padding: 10px 0;
-      color: var(--muted);
-      font-size: 11px;
-    }
-
-    @media (max-width: 850px) {
-      .page {
-        padding: 16px 14px 30px;
-      }
-
-      .topbar {
-        flex-wrap: wrap;
-        row-gap: 10px;
-      }
-
-      .view-tabs {
-        order: 3;
-        width: 100%;
-        justify-content: center;
-      }
-
-      .brand {
-        font-size: 24px;
-      }
-
-      .sync-state {
-        display: none;
-      }
-
-      .calendar-panel {
-        padding: 16px;
-        overflow-x: auto;
-      }
-
-      .calendar-header {
-        flex-direction: column;
-      }
-
-      .calendar-weekdays,
-      .calendar-grid {
-        min-width: 820px;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 
 <body>
@@ -508,25 +12,10 @@
 
     <header class="topbar">
       <a class="brand" href="./app.html">
-        <svg
-          viewBox="0 0 32 40"
-          fill="none"
-          aria-hidden="true"
-        >
-          <path
-            d="M16 2C15 9 7 14 7 24c0 7 4 12 9 12s9-5 9-12C25 14 17 9 16 2Z"
-            stroke="currentColor"
-            stroke-width="2.2"
-          />
-
-          <path
-            d="M12 28c1.5 2.5 5.5 3.5 8 0"
-            stroke="currentColor"
-            stroke-width="1.6"
-            stroke-linecap="round"
-          />
+        <svg viewBox="0 0 32 40" fill="none" aria-hidden="true">
+          <path d="M16 2C15 9 7 14 7 24c0 7 4 12 9 12s9-5 9-12C25 14 17 9 16 2Z" stroke="currentColor" stroke-width="2.2"/>
+          <path d="M12 28c1.5 2.5 5.5 3.5 8 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
         </svg>
-
         <span>minddrop</span>
       </a>
 
@@ -536,32 +25,13 @@
       </nav>
 
       <div class="top-actions">
-        <span
-          id="syncState"
-          class="sync-state"
-        >
-          connecting…
-        </span>
+        <span id="syncState" class="sync-state">connecting…</span>
 
-        <button
-          id="lockButton"
-          class="icon-button"
-          type="button"
-          title="Lock"
-          aria-label="Lock Minddrop"
-        >
-          ⌁
+        <button id="lockButton" class="icon-button" type="button" title="Lock" aria-label="Lock Minddrop">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.4" stroke="currentColor" stroke-width="1.7"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
         </button>
 
-        <button
-          id="themeToggle"
-          class="icon-button"
-          type="button"
-          title="Switch theme"
-          aria-label="Switch theme"
-        >
-          ☾
-        </button>
+        <button id="themeToggle" class="icon-button" type="button" title="Switch theme" aria-label="Switch theme"></button>
       </div>
     </header>
 
@@ -571,43 +41,23 @@
         <div class="calendar-header">
           <div>
             <h1>calendar</h1>
-
-            <p>
-              Your routines and scheduled
-              tasks in one place.
-            </p>
+            <p>Your routines and scheduled tasks in one place. Click a day to see everything or add a task.</p>
           </div>
 
           <div class="calendar-controls">
-            <button
-              id="calendarPrevious"
-              type="button"
-              aria-label="Previous month"
-            >
-              ‹
+            <button id="calendarPrevious" type="button" aria-label="Previous month">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 5L8 12L15 19" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
 
-            <button
-              id="calendarToday"
-              type="button"
-            >
-              today
-            </button>
+            <button id="calendarToday" type="button">today</button>
 
-            <button
-              id="calendarNext"
-              type="button"
-              aria-label="Next month"
-            >
-              ›
+            <button id="calendarNext" type="button" aria-label="Next month">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
           </div>
         </div>
 
-        <h2
-          id="calendarMonthTitle"
-          class="calendar-month-title"
-        ></h2>
+        <h2 id="calendarMonthTitle" class="calendar-month-title"></h2>
 
         <div class="calendar-weekdays">
           <span>sun</span>
@@ -619,18 +69,13 @@
           <span>sat</span>
         </div>
 
-        <div
-          id="calendarGrid"
-          class="calendar-grid"
-        ></div>
+        <div id="calendarGrid" class="calendar-grid"></div>
 
         <section class="calendar-unscheduled">
           <h2>unscheduled tasks</h2>
 
           <div id="unscheduledTaskList">
-            <div class="empty">
-              loading…
-            </div>
+            <div class="empty">loading…</div>
           </div>
         </section>
 
@@ -638,9 +83,28 @@
     </main>
   </div>
 
-  <script
-    type="module"
-    src="./calendar.js"
-  ></script>
+  <dialog id="dayDialog">
+    <div class="dialog-card">
+      <h2 id="dayDialogTitle">day</h2>
+
+      <div id="dayDialogEvents" class="day-dialog-events"></div>
+
+      <form id="dayTaskForm" class="dialog-grid">
+        <label>
+          Add a task for this day
+          <input id="dayTaskInput" type="text" placeholder="e.g. Call the dentist" autocomplete="off" required>
+        </label>
+
+        <div class="dialog-actions">
+          <button id="closeDayDialog" class="cancel-routine" type="button">close</button>
+          <button class="save-routine" type="submit">add task</button>
+        </div>
+
+        <div id="dayDialogError" class="error"></div>
+      </form>
+    </div>
+  </dialog>
+
+  <script type="module" src="./calendar.js"></script>
 </body>
 </html>

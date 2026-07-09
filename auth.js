@@ -1,5 +1,6 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./config.js";
+import { ICON_MOON, ICON_SUN } from "./icons.js";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const $ = id => document.getElementById(id);
@@ -13,6 +14,7 @@ let session = null;
 let profile = null;
 let newName = "";
 let newEmail = "";
+let forcePinReset = false;
 
 function show(id){ screens.forEach(x => $(x).classList.toggle("active", x === id)); }
 function focusSoon(el){ setTimeout(() => el?.focus(), 420); }
@@ -21,7 +23,7 @@ function clearPins(selector){ document.querySelectorAll(selector).forEach(x => x
 
 function applyTheme(theme){
   document.documentElement.dataset.theme = theme;
-  $("themeToggle").textContent = theme === "light" ? "☾" : "☼";
+  $("themeToggle").innerHTML = theme === "light" ? ICON_MOON : ICON_SUN;
   localStorage.setItem("minddrop-theme", theme);
 }
 $("themeToggle").onclick = () => applyTheme(document.documentElement.dataset.theme === "light" ? "dark" : "light");
@@ -77,27 +79,28 @@ async function routeSession(){
   focusSoon(document.querySelector(".unlock-pin"));
 }
 
-$("nameInput").onkeydown = e => {
-  if(e.key !== "Enter") return;
+function submitName(){
   newName = $("nameInput").value.trim();
   if(!newName) return $("nameError").textContent = "Enter your name.";
   $("nameError").textContent = "";
   $("welcomeTitle").textContent = `oh, ${newName} — you’re new`;
   show("welcomeScreen");
   setTimeout(() => { show("emailScreen"); focusSoon($("emailInput")); },1800);
-};
+}
+$("nameInput").onkeydown = e => { if(e.key === "Enter") submitName(); };
+$("nameContinue").onclick = submitName;
 
-$("emailInput").onkeydown = e => {
-  if(e.key !== "Enter") return;
+function submitEmail(){
   newEmail = $("emailInput").value.trim();
   if(!validEmail(newEmail)) return $("emailError").textContent = "Enter a valid email.";
   $("emailError").textContent = "";
   show("passwordScreen");
   focusSoon($("passwordInput"));
-};
+}
+$("emailInput").onkeydown = e => { if(e.key === "Enter") submitEmail(); };
+$("emailContinue").onclick = submitEmail;
 
-$("passwordInput").onkeydown = async e => {
-  if(e.key !== "Enter") return;
+async function submitPassword(){
   const password = $("passwordInput").value;
   if(password.length < 6) return $("passwordError").textContent = "Use at least 6 characters.";
 
@@ -123,15 +126,16 @@ $("passwordInput").onkeydown = async e => {
   await getProfile();
   show("pinSetupScreen");
   focusSoon(document.querySelector(".setup-pin"));
-};
+}
+$("passwordInput").onkeydown = e => { if(e.key === "Enter") submitPassword(); };
+$("passwordContinue").onclick = submitPassword;
 
 $("showSignIn").onclick = () => {
   show("signInEmailScreen");
   focusSoon($("signInEmail"));
 };
 
-$("signInEmail").onkeydown = e => {
-  if(e.key !== "Enter") return;
+function submitSignInEmail(){
   if(!validEmail($("signInEmail").value.trim())){
     $("signInEmailError").textContent = "Enter a valid email.";
     return;
@@ -139,10 +143,11 @@ $("signInEmail").onkeydown = e => {
   $("signInEmailError").textContent = "";
   show("signInPasswordScreen");
   focusSoon($("signInPassword"));
-};
+}
+$("signInEmail").onkeydown = e => { if(e.key === "Enter") submitSignInEmail(); };
+$("signInEmailContinue").onclick = submitSignInEmail;
 
-$("signInPassword").onkeydown = async e => {
-  if(e.key !== "Enter") return;
+async function submitSignInPassword(){
   const { data,error } = await supabase.auth.signInWithPassword({
     email:$("signInEmail").value.trim(),
     password:$("signInPassword").value
@@ -155,7 +160,30 @@ $("signInPassword").onkeydown = async e => {
 
   session = data.session;
   $("signInPasswordError").textContent = "";
+
+  if(forcePinReset){
+    forcePinReset = false;
+    show("pinSetupScreen");
+    focusSoon(document.querySelector(".setup-pin"));
+    return;
+  }
+
   await routeSession();
+}
+$("signInPassword").onkeydown = e => { if(e.key === "Enter") submitSignInPassword(); };
+$("signInPasswordContinue").onclick = submitSignInPassword;
+
+$("forgotPassword").onclick = async () => {
+  const email = $("signInEmail").value.trim();
+  if(!validEmail(email)){
+    $("signInPasswordError").textContent = "Enter your email above first.";
+    return;
+  }
+  $("signInPasswordError").textContent = "Sending reset link…";
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: new URL("./reset-password.html", location.href).toString()
+  });
+  $("signInPasswordError").textContent = error ? error.message : "Check your email for a reset link.";
 };
 
 connectPins(".setup-pin", async pin => {
@@ -187,6 +215,23 @@ $("useAnotherAccount").onclick = async () => {
   session = null;
   show("signInEmailScreen");
   focusSoon($("signInEmail"));
+};
+
+$("forgotPin").onclick = async () => {
+  const email = session?.user?.email || "";
+  forcePinReset = true;
+  sessionStorage.removeItem("minddrop-unlocked");
+  await supabase.auth.signOut();
+  session = null;
+  $("signInEmail").value = email;
+  $("signInPasswordError").textContent = "";
+  if(email){
+    show("signInPasswordScreen");
+    focusSoon($("signInPassword"));
+  } else {
+    show("signInEmailScreen");
+    focusSoon($("signInEmail"));
+  }
 };
 
 const { data:{session:initialSession} } = await supabase.auth.getSession();

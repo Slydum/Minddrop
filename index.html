@@ -17,7 +17,7 @@
       <span>minddrop</span>
     </a>
     <div class="top-actions">
-      <button id="themeToggle" class="icon-button" title="Switch theme">☾</button>
+      <button id="themeToggle" class="icon-button" type="button" title="Switch theme" aria-label="Switch theme"></button>
     </div>
   </header>
 
@@ -32,8 +32,9 @@
     <section id="nameScreen" class="screen">
       <h1 class="question">what’s your name?</h1>
       <div class="answer-card"><input id="nameInput" placeholder="Enter your name" autocomplete="name" /></div>
+      <button type="button" id="nameContinue" class="submit-button">continue</button>
       <div class="motivation">One small step is enough for now.</div>
-      <button id="showSignIn" class="text-link">already use Minddrop? sign in</button>
+      <button id="showSignIn" type="button" class="text-link">already use Minddrop? sign in</button>
       <div id="nameError" class="error"></div>
     </section>
 
@@ -45,6 +46,7 @@
     <section id="emailScreen" class="screen">
       <h1>let’s keep it synced</h1><p class="subquestion">what’s your email?</p>
       <div class="answer-card"><input id="emailInput" type="email" placeholder="you@example.com" autocomplete="email" /></div>
+      <button type="button" id="emailContinue" class="submit-button">continue</button>
       <div class="motivation">You don’t have to remember everything yourself.</div>
       <div id="emailError" class="error"></div>
     </section>
@@ -52,6 +54,7 @@
     <section id="passwordScreen" class="screen">
       <h1>create a password</h1>
       <div class="answer-card"><input id="passwordInput" type="password" placeholder="At least 6 characters" autocomplete="new-password" /></div>
+      <button type="button" id="passwordContinue" class="submit-button">continue</button>
       <div class="motivation">Set it once, then let Minddrop do the remembering.</div>
       <div id="passwordError" class="error"></div>
     </section>
@@ -59,6 +62,7 @@
     <section id="signInEmailScreen" class="screen">
       <h1>welcome back</h1><p class="subquestion">what’s your email?</p>
       <div class="answer-card"><input id="signInEmail" type="email" placeholder="you@example.com" autocomplete="email" /></div>
+      <button type="button" id="signInEmailContinue" class="submit-button">continue</button>
       <div class="motivation">Your space is right where you left it.</div>
       <div id="signInEmailError" class="error"></div>
     </section>
@@ -66,7 +70,9 @@
     <section id="signInPasswordScreen" class="screen">
       <h1>your password</h1>
       <div class="answer-card"><input id="signInPassword" type="password" placeholder="Enter your password" autocomplete="current-password" /></div>
+      <button type="button" id="signInPasswordContinue" class="submit-button">continue</button>
       <div class="motivation">One quick step, then you’re back in.</div>
+      <button id="forgotPassword" type="button" class="text-link">forgot password?</button>
       <div id="signInPasswordError" class="error"></div>
     </section>
 
@@ -87,7 +93,8 @@
         <input class="unlock-pin" inputmode="numeric" maxlength="1"><input class="unlock-pin" inputmode="numeric" maxlength="1">
       </div>
       <div class="motivation">Just one quick step, then you’re in.</div>
-      <button id="useAnotherAccount" class="text-link">use another account</button>
+      <button id="useAnotherAccount" type="button" class="text-link">use another account</button>
+      <button id="forgotPin" type="button" class="text-link">forgot PIN?</button>
       <div id="unlockError" class="error"></div>
     </section>
   </main>
