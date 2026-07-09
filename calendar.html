@@ -149,6 +149,40 @@
       height: 17px;
     }
 
+    .view-tabs {
+      display: flex;
+      gap: 4px;
+
+      padding: 4px;
+
+      border: 1px solid var(--field-border);
+      border-radius: 999px;
+
+      background: var(--panel2);
+    }
+
+    .view-tab {
+      padding: 8px 16px;
+
+      border-radius: 999px;
+
+      color: var(--muted);
+      text-decoration: none;
+
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .view-tab:hover {
+      color: var(--accent);
+    }
+
+    .view-tab.active {
+      background: var(--accent);
+      color: #171717;
+    }
+
     /* Calendar */
 
     .calendar-main {
@@ -433,6 +467,17 @@
         padding: 16px 14px 30px;
       }
 
+      .topbar {
+        flex-wrap: wrap;
+        row-gap: 10px;
+      }
+
+      .view-tabs {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+      }
+
       .brand {
         font-size: 24px;
       }
@@ -485,6 +530,11 @@
         <span>minddrop</span>
       </a>
 
+      <nav class="view-tabs" aria-label="Primary">
+        <a href="./app.html" class="view-tab">today</a>
+        <a href="./calendar.html" class="view-tab active">calendar</a>
+      </nav>
+
       <div class="top-actions">
         <span
           id="syncState"
@@ -492,34 +542,6 @@
         >
           connecting…
         </span>
-
-        <a
-          href="./app.html"
-          class="icon-button home-icon-button"
-          title="Back to today"
-          aria-label="Back to today"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M4 11.5L12 4L20 11.5"
-              stroke="currentColor"
-              stroke-width="1.7"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-
-            <path
-              d="M6.5 10V20H17.5V10"
-              stroke="currentColor"
-              stroke-width="1.7"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </a>
 
         <button
           id="lockButton"

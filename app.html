@@ -162,6 +162,40 @@
       height: 17px;
     }
 
+    .view-tabs {
+      display: flex;
+      gap: 4px;
+
+      padding: 4px;
+
+      border: 1px solid var(--field-border);
+      border-radius: 999px;
+
+      background: var(--panel2);
+    }
+
+    .view-tab {
+      padding: 8px 16px;
+
+      border-radius: 999px;
+
+      color: var(--muted);
+      text-decoration: none;
+
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .view-tab:hover {
+      color: var(--accent);
+    }
+
+    .view-tab.active {
+      background: var(--accent);
+      color: #171717;
+    }
+
     /* Dashboard */
 
     .app-main {
@@ -509,6 +543,17 @@
         padding: 16px 14px 30px;
       }
 
+      .topbar {
+        flex-wrap: wrap;
+        row-gap: 10px;
+      }
+
+      .view-tabs {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+      }
+
       .brand {
         font-size: 24px;
       }
@@ -564,6 +609,11 @@
         <span>minddrop</span>
       </a>
 
+      <nav class="view-tabs" aria-label="Primary">
+        <a href="./app.html" class="view-tab active">today</a>
+        <a href="./calendar.html" class="view-tab">calendar</a>
+      </nav>
+
       <div class="top-actions">
         <span
           id="syncState"
@@ -571,49 +621,6 @@
         >
           connecting…
         </span>
-
-        <a
-          href="./calendar.html"
-          class="icon-button calendar-icon-button"
-          title="Open calendar"
-          aria-label="Open calendar"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden="true"
-          >
-            <rect
-              x="3"
-              y="5"
-              width="18"
-              height="16"
-              rx="3"
-              stroke="currentColor"
-              stroke-width="1.7"
-            />
-
-            <path
-              d="M3 9H21"
-              stroke="currentColor"
-              stroke-width="1.7"
-            />
-
-            <path
-              d="M8 3V7M16 3V7"
-              stroke="currentColor"
-              stroke-width="1.7"
-              stroke-linecap="round"
-            />
-
-            <path
-              d="M8 13H8.01M12 13H12.01M16 13H16.01M8 17H8.01M12 17H12.01"
-              stroke="currentColor"
-              stroke-width="2.2"
-              stroke-linecap="round"
-            />
-          </svg>
-        </a>
 
         <button
           id="lockButton"
