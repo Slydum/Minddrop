@@ -22,6 +22,7 @@ let calendarDate = new Date();
 let realtimeChannel = null;
 
 calendarDate.setDate(1);
+renderCalendar();
 
 function escapeHtml(value) {
   return String(value).replace(
